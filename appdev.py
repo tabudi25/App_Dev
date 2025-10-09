@@ -334,8 +334,8 @@ pause_btn.pack(pady=12, fill="x")
 
 # === BOARD FRAME (main card grid area) ===
 board_frame = tk.Frame(game_frame, bg=COLOR_BG_PANEL)  # Board container for cards
-pywinstyles.set_opacity(board_frame, color=COLOR_BG_PANEL)
 board_frame.place(relx=0.5, rely=0.45, anchor="center")  # Positioned center
+pywinstyles.set_opacity(board_frame, color=COLOR_BG_PANEL)
 
 # === RESULT LABEL (for overlay messages like win/lose) ===
 result_label = tk.Label(
