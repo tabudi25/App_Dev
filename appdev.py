@@ -368,6 +368,26 @@ def on_win_back():
     back_to_themes()
 
 
+def on_time_reset():
+    time_overlay.lower()
+    reset_game(grid_size, theme=current_theme)
+
+
+def on_time_back():
+    time_overlay.lower()
+    back_to_themes()
+
+
+def on_flip_reset():
+    flip_overlay.lower()
+    reset_game(grid_size, theme=current_theme)
+
+
+def on_flip_back():
+    flip_overlay.lower()
+    back_to_themes()
+
+
 win_btns = tk.Frame(win_overlay, bg="black")
 win_btns.pack(side="bottom", pady=15)
 
@@ -427,7 +447,7 @@ flip_reset_btn = ctk.CTkButton(
     text_color="white",
     width=100,
     corner_radius=12,
-    command=on_win_reset,
+    command=on_flip_reset,
 )
 pywinstyles.set_opacity(flip_reset_btn, color="#000001")
 flip_reset_btn.pack(side="left", padx=10)
@@ -442,7 +462,7 @@ flip_back_btn = ctk.CTkButton(
     text_color="white",
     width=100,
     corner_radius=12,
-    command=on_win_back,
+    command=on_flip_back,
 )
 pywinstyles.set_opacity(flip_back_btn, color="#000001")
 flip_back_btn.pack(side="right", padx=10)
@@ -469,7 +489,7 @@ time_reset_btn = ctk.CTkButton(
     text_color="white",
     width=100,
     corner_radius=12,
-    command=on_win_reset,
+    command=on_time_reset,
 )
 pywinstyles.set_opacity(time_reset_btn, color="#000001")
 time_reset_btn.pack(side="left", padx=10)
@@ -484,7 +504,7 @@ time_back_btn = ctk.CTkButton(
     text_color="white",
     width=100,
     corner_radius=12,
-    command=on_win_back,
+    command=on_time_back,
 )
 pywinstyles.set_opacity(time_back_btn, color="#000001")
 time_back_btn.pack(side="right", padx=10)
@@ -718,7 +738,7 @@ start_btn = ctk.CTkButton(
     command=lambda: go_to(themes_frame),
 )
 pywinstyles.set_opacity(start_btn, color="#000001")
-start_btn.place(x=600, y=400)
+start_btn.place(relx=0.5, y=400, anchor="center")
 
 howto_btn = ctk.CTkButton(
     home_frame,
@@ -734,7 +754,7 @@ howto_btn = ctk.CTkButton(
     command=lambda: go_to(howto_frame),
 )
 pywinstyles.set_opacity(howto_btn, color="#000001")
-howto_btn.place(x=600, y=490)
+howto_btn.place(relx=0.5, y=490, anchor="center")
 
 exit_btn = ctk.CTkButton(
     home_frame,
@@ -750,7 +770,7 @@ exit_btn = ctk.CTkButton(
     command=lambda: go_to(exit_app()),
 )
 pywinstyles.set_opacity(exit_btn, color="#000001")
-exit_btn.place(x=600, y=580)
+exit_btn.place(relx=0.5, y=580, anchor="center")
 
 
 def make_theme_btn(parent, text, y, cmd):
@@ -794,76 +814,185 @@ bleach_theme_btn = make_theme_btn(
 bleach_theme_btn.place(x=690, y=330)
 
 # --- HOW TO PLAY FRAME ---
-# --- HOW TO PLAY FRAME ---
-howto_frame = tk.Frame(root, bg="black")
+howto_frame = tk.Frame(root, bg="#0d1117")  # GitHub dark background
 set_bg(howto_frame, "howtoplaybg.png")  # optional anime-themed background
 howto_frame.place(relwidth=1, relheight=1)
 home_frame.lift()  # ensure home screen shows first
 
+# --- MAIN CONTAINER ---
+main_container = tk.Frame(howto_frame, bg="#161b22", relief="ridge", bd=4)
+main_container.place(relx=0.5, rely=0.5, anchor="center", width=850, height=750)
+
 # --- STYLED TITLE ---
 title_label = tk.Label(
-    howto_frame,
+    main_container,
     text="HOW TO PLAY",
-    font=("Impact", 17, "bold"),  # anime-style bold font
-    fg="#FFD700",  # gold color
-    bg="black",
+    font=("Impact", 32, "bold"),
+    fg="#58a6ff",  # GitHub blue
+    bg="#161b22",
 )
-title_label.pack(pady=(60, 5))  # spacing at top
+title_label.pack(pady=(30, 25))
 
-# --- HOW TO PLAY TEXT ---
-howto_text = """
-Choose a Theme
-Pick your favorite anime world — Naruto, One Piece, Slam Dunk, Dragon Ball, or Bleach.
-Select a Difficulty
-Choose your board size:
-4x4 → Easy
-6x6 → Medium
-8x8 → Hard
-Start the Game
-Flip two cards to reveal their pictures.
-Match all pairs before time runs out!
-Scoring
-+5 points for every correct match.
-Limited flips — don’t waste your turns!
-You win when all pairs are matched!
-Controls
-Pause / Resume – Stop or continue the game.
-Reset – Restart the current game.
-Back – Return to the theme menu.
-Game Over Conditions
-Time’s up!
-Flip limit reached!
-All pairs matched = You Win!
-"""
+# --- INSTRUCTION SECTIONS ---
+# Create a scrollable frame for instructions
+instruction_frame = tk.Frame(main_container, bg="#161b22")
+instruction_frame.pack(fill="both", expand=True, padx=35, pady=15)
 
-howto_label = tk.Label(
-    howto_frame,
-    text=howto_text,
-    font=("Comic Sans MS", 12, "bold"),  # playful anime-like font
-    fg="white",
-    bg="black",
-    justify="center",
-    padx=60,
-    pady=20,
+# Theme Selection
+theme_section = tk.Frame(instruction_frame, bg="#21262d", relief="raised", bd=2)
+theme_section.pack(fill="x", pady=8)
+
+theme_title = tk.Label(
+    theme_section,
+    text="🎮 Choose a Theme",
+    font=("Comic Sans MS", 18, "bold"),
+    fg="#f85149",  # GitHub red
+    bg="#21262d",
 )
-howto_label.pack(fill="both", expand=False)
+theme_title.pack(anchor="w", padx=20, pady=(15, 8))
 
-# --- BACK BUTTON (styled anime look) ---
+theme_text = tk.Label(
+    theme_section,
+    text="Pick your favorite anime world — Naruto, One Piece, Slam Dunk, Dragon Ball, or Bleach.",
+    font=("Arial", 13),
+    fg="#f0f6fc",  # GitHub light text
+    bg="#21262d",
+    wraplength=750,
+    justify="left",
+)
+theme_text.pack(anchor="w", padx=20, pady=(0, 15))
+
+# Difficulty Selection
+diff_section = tk.Frame(instruction_frame, bg="#21262d", relief="raised", bd=2)
+diff_section.pack(fill="x", pady=8)
+
+diff_title = tk.Label(
+    diff_section,
+    text="⚡ Select a Difficulty",
+    font=("Comic Sans MS", 18, "bold"),
+    fg="#a5d6ff",  # GitHub light blue
+    bg="#21262d",
+)
+diff_title.pack(anchor="w", padx=20, pady=(15, 8))
+
+diff_text = tk.Label(
+    diff_section,
+    text="Choose your board size:\n4x4 → Easy (8 pairs)\n6x6 → Medium (18 pairs)\n8x8 → Hard (32 pairs)",
+    font=("Arial", 13),
+    fg="#f0f6fc",
+    bg="#21262d",
+    justify="left",
+)
+diff_text.pack(anchor="w", padx=20, pady=(0, 15))
+
+# Gameplay
+gameplay_section = tk.Frame(instruction_frame, bg="#21262d", relief="raised", bd=2)
+gameplay_section.pack(fill="x", pady=8)
+
+gameplay_title = tk.Label(
+    gameplay_section,
+    text="🎯 Start the Game",
+    font=("Comic Sans MS", 18, "bold"),
+    fg="#ffa657",  # GitHub orange
+    bg="#21262d",
+)
+gameplay_title.pack(anchor="w", padx=20, pady=(15, 8))
+
+gameplay_text = tk.Label(
+    gameplay_section,
+    text="Flip two cards to reveal their pictures.\nMatch all pairs before time runs out!",
+    font=("Arial", 13),
+    fg="#f0f6fc",
+    bg="#21262d",
+    justify="left",
+)
+gameplay_text.pack(anchor="w", padx=20, pady=(0, 15))
+
+# Scoring
+scoring_section = tk.Frame(instruction_frame, bg="#21262d", relief="raised", bd=2)
+scoring_section.pack(fill="x", pady=8)
+
+scoring_title = tk.Label(
+    scoring_section,
+    text="🏆 Scoring",
+    font=("Comic Sans MS", 18, "bold"),
+    fg="#d2a8ff",  # GitHub purple
+    bg="#21262d",
+)
+scoring_title.pack(anchor="w", padx=20, pady=(15, 8))
+
+scoring_text = tk.Label(
+    scoring_section,
+    text="+5 points for every correct match.\nLimited flips — don't waste your turns!\nYou win when all pairs are matched!",
+    font=("Arial", 13),
+    fg="#f0f6fc",
+    bg="#21262d",
+    justify="left",
+)
+scoring_text.pack(anchor="w", padx=20, pady=(0, 15))
+
+# Controls
+controls_section = tk.Frame(instruction_frame, bg="#21262d", relief="raised", bd=2)
+controls_section.pack(fill="x", pady=8)
+
+controls_title = tk.Label(
+    controls_section,
+    text="🎮 Controls",
+    font=("Comic Sans MS", 18, "bold"),
+    fg="#79c0ff",  # GitHub blue
+    bg="#21262d",
+)
+controls_title.pack(anchor="w", padx=20, pady=(15, 8))
+
+controls_text = tk.Label(
+    controls_section,
+    text="Pause / Resume – Stop or continue the game.\nReset – Restart the current game.\nBack – Return to the theme menu.",
+    font=("Arial", 13),
+    fg="#f0f6fc",
+    bg="#21262d",
+    justify="left",
+)
+controls_text.pack(anchor="w", padx=20, pady=(0, 15))
+
+# Game Over
+gameover_section = tk.Frame(instruction_frame, bg="#21262d", relief="raised", bd=2)
+gameover_section.pack(fill="x", pady=8)
+
+gameover_title = tk.Label(
+    gameover_section,
+    text="⚠️ Game Over Conditions",
+    font=("Comic Sans MS", 18, "bold"),
+    fg="#ff7b72",  # GitHub red
+    bg="#21262d",
+)
+gameover_title.pack(anchor="w", padx=20, pady=(15, 8))
+
+gameover_text = tk.Label(
+    gameover_section,
+    text="Time's up!\nFlip limit reached!\nAll pairs matched = You Win!",
+    font=("Arial", 13),
+    fg="#f0f6fc",
+    bg="#21262d",
+    justify="left",
+)
+gameover_text.pack(anchor="w", padx=20, pady=(0, 15))
+
+# --- BACK BUTTON (top left corner) ---
 howto_back_btn = ctk.CTkButton(
     howto_frame,
     text="← Back",
-    font=("Comic Sans MS", 14, "bold"),
-    fg_color="#e67e22",
-    bg_color="#000001",
+    font=("Comic Sans MS", 16, "bold"),
+    fg_color="#f85149",  # GitHub red
+    bg_color="#0d1117",
     text_color="white",
-    hover_color="#ff9f43",
+    hover_color="#da3633",
     width=120,
-    height=50,
-    corner_radius=15,
+    height=45,
+    corner_radius=20,
     command=lambda: go_to(home_frame),
 )
-pywinstyles.set_opacity(howto_back_btn, color="#000001")
-howto_back_btn.place(relx=0.5, rely=0.9, anchor="center")
+pywinstyles.set_opacity(howto_back_btn, color="#0d1117")
+howto_back_btn.place(x=20, y=20)
 
 
 # --- UPDATE YOUR HOW TO PLAY BUTTON to go here ---
@@ -912,69 +1041,69 @@ def make_back_btn(parent, text, cmd, bg, abg):
 
 # Naruto choose tiles
 make_tile_btn(
-    naruto_frame, "4x4", 200, 345, lambda: go_to_narutogame(4), "#2ecc71", "#27ae60"
+    naruto_frame, "4x4", 200, 345, lambda: go_to_narutogame(4), "#6366f1", "#4f46e5"
 )
 make_tile_btn(
-    naruto_frame, "6x6", 600, 345, lambda: go_to_narutogame(6), "#f1c40f", "#d4ac0d"
+    naruto_frame, "6x6", 600, 345, lambda: go_to_narutogame(6), "#6366f1", "#4f46e5"
 )
 make_tile_btn(
-    naruto_frame, "8x8", 1000, 345, lambda: go_to_narutogame(8), "#9b59b6", "#8e44ad"
+    naruto_frame, "8x8", 1000, 345, lambda: go_to_narutogame(8), "#6366f1", "#4f46e5"
 )
-make_back_btn(naruto_frame, "← Back", lambda: go_to(themes_frame), "#e67e22", "#d35400")
+make_back_btn(naruto_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626")
 
 # One Piece choose tiles
 make_tile_btn(
-    onepiece_frame, "4x4", 200, 345, lambda: go_to_opgame(4), "#2ecc71", "#27ae60"
+    onepiece_frame, "4x4", 200, 345, lambda: go_to_opgame(4), "#6366f1", "#4f46e5"
 )
 make_tile_btn(
-    onepiece_frame, "6x6", 600, 345, lambda: go_to_opgame(6), "#f1c40f", "#d4ac0d"
+    onepiece_frame, "6x6", 600, 345, lambda: go_to_opgame(6), "#6366f1", "#4f46e5"
 )
 make_tile_btn(
-    onepiece_frame, "8x8", 1000, 345, lambda: go_to_opgame(8), "#9b59b6", "#8e44ad"
+    onepiece_frame, "8x8", 1000, 345, lambda: go_to_opgame(8), "#6366f1", "#4f46e5"
 )
 make_back_btn(
-    onepiece_frame, "← Back", lambda: go_to(themes_frame), "#e67e22", "#d35400"
+    onepiece_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626"
 )
 
 # Slam Dunk choose tiles
 make_tile_btn(
-    slamdunk_frame, "4x4", 200, 345, lambda: go_to_slamgame(4), "#2ecc71", "#27ae60"
+    slamdunk_frame, "4x4", 200, 345, lambda: go_to_slamgame(4), "#6366f1", "#4f46e5"
 )
 make_tile_btn(
-    slamdunk_frame, "6x6", 600, 345, lambda: go_to_slamgame(6), "#f1c40f", "#d4ac0d"
+    slamdunk_frame, "6x6", 600, 345, lambda: go_to_slamgame(6), "#6366f1", "#4f46e5"
 )
 make_tile_btn(
-    slamdunk_frame, "8x8", 1000, 345, lambda: go_to_slamgame(8), "#9b59b6", "#8e44ad"
+    slamdunk_frame, "8x8", 1000, 345, lambda: go_to_slamgame(8), "#6366f1", "#4f46e5"
 )
 make_back_btn(
-    slamdunk_frame, "← Back", lambda: go_to(themes_frame), "#e67e22", "#d35400"
+    slamdunk_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626"
 )
 
 # Dragon Ball choose tiles
 make_tile_btn(
-    dragonball_frame, "4x4", 200, 345, lambda: go_to_dbgame(4), "#2ecc71", "#27ae60"
+    dragonball_frame, "4x4", 200, 345, lambda: go_to_dbgame(4), "#6366f1", "#4f46e5"
 )
 make_tile_btn(
-    dragonball_frame, "6x6", 600, 345, lambda: go_to_dbgame(6), "#f1c40f", "#d4ac0d"
+    dragonball_frame, "6x6", 600, 345, lambda: go_to_dbgame(6), "#6366f1", "#4f46e5"
 )
 make_tile_btn(
-    dragonball_frame, "8x8", 1000, 345, lambda: go_to_dbgame(8), "#9b59b6", "#8e44ad"
+    dragonball_frame, "8x8", 1000, 345, lambda: go_to_dbgame(8), "#6366f1", "#4f46e5"
 )
 make_back_btn(
-    dragonball_frame, "← Back", lambda: go_to(themes_frame), "#e67e22", "#d35400"
+    dragonball_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626"
 )
 
 # Bleach choose tiles
 make_tile_btn(
-    bleach_frame, "4x4", 200, 345, lambda: go_to_bleachgame(4), "#2ecc71", "#27ae60"
+    bleach_frame, "4x4", 200, 345, lambda: go_to_bleachgame(4), "#6366f1", "#4f46e5"
 )
 make_tile_btn(
-    bleach_frame, "6x6", 600, 345, lambda: go_to_bleachgame(6), "#f1c40f", "#d4ac0d"
+    bleach_frame, "6x6", 600, 345, lambda: go_to_bleachgame(6), "#6366f1", "#4f46e5"
 )
 make_tile_btn(
-    bleach_frame, "8x8", 1000, 345, lambda: go_to_bleachgame(8), "#9b59b6", "#8e44ad"
+    bleach_frame, "8x8", 1000, 345, lambda: go_to_bleachgame(8), "#6366f1", "#4f46e5"
 )
-make_back_btn(bleach_frame, "← Back", lambda: go_to(themes_frame), "#e67e22", "#d35400")
+make_back_btn(bleach_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626")
 
 # --- Ensure theme selection also has a visible Back to Themes button on each theme main (optional) ---
 themes_home_btn = ctk.CTkButton(
