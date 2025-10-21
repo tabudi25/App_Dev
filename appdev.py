@@ -245,7 +245,7 @@ def on_pause_toggle():
         paused = False
         timer_running = True
         pause_btn.configure(
-            text="⏸ Pause", fg_color="#3498db", hover_color="#2980b9"
+            text="⏸ Pause", fg_color="#e74c3c", hover_color="#c0392b"
         )  # Change button look
         pause_overlay.lower()  # Hide overlay
         play_music()  # Resume bg music
@@ -254,7 +254,7 @@ def on_pause_toggle():
         paused = True
         timer_running = False
         pause_btn.configure(
-            text="▶ Resume", fg_color="#27ae60", hover_color="#1e8449"
+            text="▶ Resume", fg_color="#e74c3c", hover_color="#c0392b"
         )  # Change button look
         stop_music()  # Stop bg music
         pause_overlay.lift()  # Show overlay
@@ -303,9 +303,9 @@ reset_btn.pack(pady=12, fill="x")  # Add spacing, full width
 back_btn = ctk.CTkButton(
     side_panel,
     text="← Back",
-    fg_color="#e67e22",
+    fg_color="#e74c3c",
     bg_color="#000001",
-    hover_color="#d35400",
+    hover_color="#c0392b",
     text_color=COLOR_BTN_TEXT,
     font=("Arial", 14, "bold"),
     width=12 * 10,
@@ -319,9 +319,9 @@ back_btn.pack(pady=12, fill="x")
 pause_btn = ctk.CTkButton(
     side_panel,
     text="⏸ Pause",
-    fg_color="#3498db",
+    fg_color="#e74c3c",
     bg_color="#000001",
-    hover_color="#2980b9",
+    hover_color="#c0392b",
     text_color=COLOR_BTN_TEXT,
     font=("Arial", 14, "bold"),
     width=12 * 10,
@@ -704,7 +704,7 @@ def reset_game(size=4, theme="naruto"):
     result_label.lower()
     win_overlay.lower()
     pause_overlay.lower()
-    pause_btn.configure(text="⏸ Pause", fg_color="#3498db")
+    pause_btn.configure(text="⏸ Pause", fg_color="#e74c3c")
     update_timer()
 
 
@@ -793,7 +793,7 @@ def make_theme_btn(parent, text, y, cmd):
 
 
 naruto_theme_btn = make_theme_btn(
-    themes_frame, "Naruto", 180, lambda: go_to(naruto_frame)
+    themes_frame, "Naruto", 180, lambda: go_to_naruto_with_auto_transitions()
 )
 naruto_theme_btn.place(x=130, y=330)
 onepiece_theme_btn = make_theme_btn(
@@ -1039,17 +1039,284 @@ def make_back_btn(parent, text, cmd, bg, abg):
     return btn
 
 
-# Naruto choose tiles
-make_tile_btn(
-    naruto_frame, "4x4", 200, 345, lambda: go_to_narutogame(4), "#6366f1", "#4f46e5"
+# Add GIF frame to the right side of naruto_frame (landscape orientation)
+naruto_gif_frame = tk.Frame(naruto_frame, bg="#1A1A2E", relief="raised", bd=3)
+naruto_gif_frame.place(x=400, y=200, width=800, height=400)
+
+# Naruto choose tiles - arranged on left side with hover effects
+# Create 4x4 button with hover effect
+naruto_4x4_btn = ctk.CTkButton(
+    naruto_frame,
+    text="4x4",
+    font=("Arial", 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_narutogame(4),
 )
-make_tile_btn(
-    naruto_frame, "6x6", 600, 345, lambda: go_to_narutogame(6), "#6366f1", "#4f46e5"
+pywinstyles.set_opacity(naruto_4x4_btn, color="#000001")
+naruto_4x4_btn.place(x=150, y=300)
+
+# Add hover effects to 4x4 button
+def on_4x4_enter(event):
+    stop_auto_transitions()
+    load_4x4_gif()
+
+def on_4x4_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+naruto_4x4_btn.bind("<Enter>", on_4x4_enter)
+naruto_4x4_btn.bind("<Leave>", on_4x4_leave)
+# Create 6x6 button with hover effect
+naruto_6x6_btn = ctk.CTkButton(
+    naruto_frame,
+    text="6x6",
+    font=("Arial", 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_narutogame(6),
 )
-make_tile_btn(
-    naruto_frame, "8x8", 1000, 345, lambda: go_to_narutogame(8), "#6366f1", "#4f46e5"
+pywinstyles.set_opacity(naruto_6x6_btn, color="#000001")
+naruto_6x6_btn.place(x=150, y=400)
+
+# Add hover effects to 6x6 button
+def on_6x6_enter(event):
+    stop_auto_transitions()
+    load_6x6_gif()
+
+def on_6x6_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+naruto_6x6_btn.bind("<Enter>", on_6x6_enter)
+naruto_6x6_btn.bind("<Leave>", on_6x6_leave)
+# Create 8x8 button with hover effect
+naruto_8x8_btn = ctk.CTkButton(
+    naruto_frame,
+    text="8x8",
+    font=("Arial", 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_narutogame(8),
 )
+pywinstyles.set_opacity(naruto_8x8_btn, color="#000001")
+naruto_8x8_btn.place(x=150, y=500)
+
+# Add hover effects to 8x8 button
+def on_8x8_enter(event):
+    stop_auto_transitions()
+    load_8x8_gif()
+
+def on_8x8_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+naruto_8x8_btn.bind("<Enter>", on_8x8_enter)
+naruto_8x8_btn.bind("<Leave>", on_8x8_leave)
 make_back_btn(naruto_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626")
+
+# GIF frame with hover effects and smooth transitions
+naruto_gif_images = []
+naruto_gif_labels = []
+current_gif_label = None
+auto_transition_running = False
+current_auto_gif = 0
+transition_timer = None
+
+def load_4x4_gif():
+    global current_gif_label
+    if os.path.exists("GIF-4x4.png"):
+        try:
+            # Clear previous GIF
+            if current_gif_label:
+                current_gif_label.destroy()
+            
+            # Load and resize image to fit frame without zooming
+            from PIL import Image, ImageTk
+            pil_img = Image.open("GIF-4x4.png")
+            
+            # Calculate scaling to fit within frame with padding to prevent overlap
+            frame_width, frame_height = 760, 360  # Reduced size to prevent overlap
+            img_width, img_height = pil_img.size
+            
+            # Calculate scale factor to fit image within frame with margin
+            scale_w = frame_width / img_width
+            scale_h = frame_height / img_height
+            scale = min(scale_w, scale_h)  # Use smaller scale to fit entirely
+            
+            # Resize image maintaining aspect ratio
+            new_width = int(img_width * scale)
+            new_height = int(img_height * scale)
+            pil_img = pil_img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            
+            # Convert to PhotoImage
+            img = ImageTk.PhotoImage(pil_img)
+            current_gif_label = tk.Label(naruto_gif_frame, image=img, bg="#1A1A2E")
+            # Center the resized image in the frame
+            current_gif_label.place(relx=0.5, rely=0.5, anchor="center")
+            current_gif_label.image = img  # Keep reference
+        except Exception:
+            pass
+
+def load_6x6_gif():
+    global current_gif_label
+    if os.path.exists("GIF-6x6.png"):
+        try:
+            # Clear previous GIF
+            if current_gif_label:
+                current_gif_label.destroy()
+            
+            # Load and resize image to fit frame without zooming
+            from PIL import Image, ImageTk
+            pil_img = Image.open("GIF-6x6.png")
+            
+            # Calculate scaling to fit within frame with padding to prevent overlap
+            frame_width, frame_height = 760, 360  # Reduced size to prevent overlap
+            img_width, img_height = pil_img.size
+            
+            # Calculate scale factor to fit image within frame with margin
+            scale_w = frame_width / img_width
+            scale_h = frame_height / img_height
+            scale = min(scale_w, scale_h)  # Use smaller scale to fit entirely
+            
+            # Resize image maintaining aspect ratio
+            new_width = int(img_width * scale)
+            new_height = int(img_height * scale)
+            pil_img = pil_img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            
+            # Convert to PhotoImage
+            img = ImageTk.PhotoImage(pil_img)
+            current_gif_label = tk.Label(naruto_gif_frame, image=img, bg="#1A1A2E")
+            # Center the resized image in the frame
+            current_gif_label.place(relx=0.5, rely=0.5, anchor="center")
+            current_gif_label.image = img  # Keep reference
+        except Exception:
+            pass
+
+def load_8x8_gif():
+    global current_gif_label
+    if os.path.exists("GIF-8x8.png"):
+        try:
+            # Clear previous GIF
+            if current_gif_label:
+                current_gif_label.destroy()
+            
+            # Load and resize image to fit frame without zooming
+            from PIL import Image, ImageTk
+            pil_img = Image.open("GIF-8x8.png")
+            
+            # Calculate scaling to fit within frame with padding to prevent overlap
+            frame_width, frame_height = 760, 360  # Reduced size to prevent overlap
+            img_width, img_height = pil_img.size
+            
+            # Calculate scale factor to fit image within frame with margin
+            scale_w = frame_width / img_width
+            scale_h = frame_height / img_height
+            scale = min(scale_w, scale_h)  # Use smaller scale to fit entirely
+            
+            # Resize image maintaining aspect ratio
+            new_width = int(img_width * scale)
+            new_height = int(img_height * scale)
+            pil_img = pil_img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            
+            # Convert to PhotoImage
+            img = ImageTk.PhotoImage(pil_img)
+            current_gif_label = tk.Label(naruto_gif_frame, image=img, bg="#1A1A2E")
+            # Center the resized image in the frame
+            current_gif_label.place(relx=0.5, rely=0.5, anchor="center")
+            current_gif_label.image = img  # Keep reference
+        except Exception:
+            pass
+
+def clear_gif():
+    global current_gif_label
+    if current_gif_label:
+        current_gif_label.destroy()
+        current_gif_label = None
+
+def start_auto_transitions():
+    global auto_transition_running, current_auto_gif, transition_timer
+    auto_transition_running = True
+    current_auto_gif = 0
+    cycle_auto_gifs()
+
+def stop_auto_transitions():
+    global auto_transition_running, transition_timer
+    auto_transition_running = False
+    if transition_timer:
+        root.after_cancel(transition_timer)
+        transition_timer = None
+
+def cycle_auto_gifs():
+    global current_auto_gif, auto_transition_running, transition_timer
+    if not auto_transition_running:
+        return
+    
+    # Load current auto GIF
+    gif_files = ["GIF-4x4.png", "GIF-6x6.png", "GIF-8x8.png"]
+    if current_auto_gif < len(gif_files):
+        load_auto_gif(gif_files[current_auto_gif])
+        current_auto_gif = (current_auto_gif + 1) % len(gif_files)
+    
+    # Schedule next transition
+    transition_timer = root.after(3000, cycle_auto_gifs)  # 3 second intervals
+
+def load_auto_gif(gif_file):
+    global current_gif_label
+    if os.path.exists(gif_file):
+        try:
+            # Clear previous GIF
+            if current_gif_label:
+                current_gif_label.destroy()
+            
+            # Load and resize image to fit frame without zooming
+            from PIL import Image, ImageTk
+            pil_img = Image.open(gif_file)
+            
+            # Calculate scaling to fit within frame with padding to prevent overlap
+            frame_width, frame_height = 760, 360  # Reduced size to prevent overlap
+            img_width, img_height = pil_img.size
+            
+            # Calculate scale factor to fit image within frame with margin
+            scale_w = frame_width / img_width
+            scale_h = frame_height / img_height
+            scale = min(scale_w, scale_h)  # Use smaller scale to fit entirely
+            
+            # Resize image maintaining aspect ratio
+            new_width = int(img_width * scale)
+            new_height = int(img_height * scale)
+            pil_img = pil_img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            
+            # Convert to PhotoImage
+            img = ImageTk.PhotoImage(pil_img)
+            current_gif_label = tk.Label(naruto_gif_frame, image=img, bg="#1A1A2E")
+            # Center the resized image in the frame
+            current_gif_label.place(relx=0.5, rely=0.5, anchor="center")
+            current_gif_label.image = img  # Keep reference
+        except Exception:
+            pass
+
+# Start auto transitions when naruto frame is shown
+def go_to_naruto_with_auto_transitions():
+    go_to(naruto_frame)
+    start_auto_transitions()
+
+# GIF frame is ready for hover effects
 
 # One Piece choose tiles
 make_tile_btn(
