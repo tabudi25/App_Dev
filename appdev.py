@@ -187,7 +187,7 @@ score_panel.grid(
     row=0, column=0, padx=20, sticky="w"
 )  # Gibutang sa row=0 col=0, left aligned
 score_label = tk.Label(
-    score_panel, text="Score: 0", font=("Arial", 18), fg="white", bg=COLOR_PANEL_ACCENT
+    score_panel, text="Score: 0", font=("Brush Script MT", 18, "bold"), fg="white", bg=COLOR_PANEL_ACCENT
 )  # Label para score
 score_label.pack(side="left", padx=(6, 12))  # Gibutang left sa sulod sa panel
 
@@ -195,7 +195,7 @@ score_label.pack(side="left", padx=(6, 12))  # Gibutang left sa sulod sa panel
 flips_label = tk.Label(
     game_frame,
     text=f"Flips: 0/{flip_limit}",
-    font=("Arial", 18),
+    font=("Brush Script MT", 18, "bold"),
     fg="white",
     bg=COLOR_PANEL_ACCENT,
 )  # Label para flips count
@@ -204,7 +204,7 @@ flips_label.grid(row=0, column=1, padx=20)  # Gibutang sa row=0 col=1
 timer_label = tk.Label(
     game_frame,
     text=f"Time: {time_limit}s",
-    font=("Arial", 18),
+    font=("Brush Script MT", 18, "bold"),
     fg="white",
     bg=COLOR_PANEL_ACCENT,
 )  # Label para countdown timer
@@ -214,7 +214,7 @@ timer_label.grid(row=0, column=2, padx=20)  # Gibutang sa row=0 col=2
 pause_overlay = tk.Label(
     game_frame,
     text="The Game Paused",
-    font=("Arial", 48, "bold"),
+    font=("Brush Script MT", 48, "bold"),
     fg="yellow",
     bg="black",
 )  # Overlay text "paused"
@@ -227,7 +227,7 @@ side_panel.place(relx=0.95, rely=0.5, anchor="e")  # Placed near right edge
 
 # === BUTTON CONFIGURATION (shared style) ===
 btn_cfg = {
-    "font": ("Arial", 14, "bold"),
+    "font": ("Sukajan Brush", 14, "bold"),
     "fg": COLOR_BTN_TEXT,
     "width": 12,
     "height": 2,
@@ -291,7 +291,7 @@ reset_btn = ctk.CTkButton(
     bg_color="#000001",
     hover_color="#c0392b",
     text_color=COLOR_BTN_TEXT,
-    font=("Arial", 14, "bold"),
+    font=("Brush Script MT", 14, "bold"),
     width=12 * 10,
     height=2 * 20,
     corner_radius=15,
@@ -307,7 +307,7 @@ back_btn = ctk.CTkButton(
     bg_color="#000001",
     hover_color="#c0392b",
     text_color=COLOR_BTN_TEXT,
-    font=("Arial", 14, "bold"),
+    font=("Brush Script MT", 14, "bold"),
     width=12 * 10,
     height=2 * 20,
     corner_radius=15,
@@ -323,7 +323,7 @@ pause_btn = ctk.CTkButton(
     bg_color="#000001",
     hover_color="#c0392b",
     text_color=COLOR_BTN_TEXT,
-    font=("Arial", 14, "bold"),
+    font=("Brush Script MT", 14, "bold"),
     width=12 * 10,
     height=2 * 20,
     corner_radius=15,
@@ -339,7 +339,7 @@ pywinstyles.set_opacity(board_frame, color=COLOR_BG_PANEL)
 
 # === RESULT LABEL (for overlay messages like win/lose) ===
 result_label = tk.Label(
-    game_frame, text="", font=("Arial", 40, "bold"), fg="yellow", bg="black"
+    game_frame, text="", font=("Brush Script MT", 40, "bold"), fg="yellow", bg="black"
 )  # Big text for result
 result_label.place(relx=0.5, rely=0.5, anchor="center")  # Center screen
 result_label.lower()  # Hide by default
@@ -351,10 +351,10 @@ win_overlay.place(relx=0.5, rely=0.5, anchor="center", width=400, height=250)
 win_overlay.lower()
 
 win_msg = tk.Label(
-    win_overlay, text="You Win!", font=("Arial", 28, "bold"), fg="lime", bg="black"
+    win_overlay, text="You Win!", font=("Brush Script MT", 28, "bold"), fg="lime", bg="black"
 )
 win_msg.pack(pady=(15, 5))
-win_stats = tk.Label(win_overlay, text="", font=("Arial", 16), fg="white", bg="black")
+win_stats = tk.Label(win_overlay, text="", font=("Brush Script MT", 16, "bold"), fg="white", bg="black")
 win_stats.pack(pady=10)
 
 
@@ -394,7 +394,7 @@ win_btns.pack(side="bottom", pady=15)
 win_reset_btn = ctk.CTkButton(
     win_btns,
     text="⟳ Reset",
-    font=("Arial", 14, "bold"),
+    font=("Brush Script MT", 14, "bold"),
     fg_color="#e74c3c",
     bg_color="#000001",
     hover_color="#c0392b",
@@ -409,7 +409,7 @@ win_reset_btn.pack(side="left", padx=10)
 win_back_btn = ctk.CTkButton(
     win_btns,
     text="← Back",
-    font=("Arial", 14, "bold"),
+    font=("Brush Script MT", 14, "bold"),
     fg_color="#e67e22",
     bg_color="#000001",
     hover_color="#d35400",
@@ -429,18 +429,18 @@ flip_overlay.lower()
 flip_msg = tk.Label(
     flip_overlay,
     text="Flip Limit Reached!",
-    font=("Arial", 24, "bold"),
+    font=("Brush Script MT", 24, "bold"),
     fg="red",
     bg="black",
 )
 flip_msg.pack(pady=(15, 5))
-flip_stats = tk.Label(flip_overlay, text="", font=("Arial", 16), fg="white", bg="black")
+flip_stats = tk.Label(flip_overlay, text="", font=("Brush Script MT", 16, "bold"), fg="white", bg="black")
 flip_stats.pack(pady=10)
 
 flip_reset_btn = ctk.CTkButton(
     flip_overlay,
     text="⟳ Reset",
-    font=("Arial", 14, "bold"),
+    font=("Brush Script MT", 14, "bold"),
     fg_color="#e74c3c",
     bg_color="#000001",
     hover_color="#c0392b",
@@ -455,7 +455,7 @@ flip_reset_btn.pack(side="left", padx=10)
 flip_back_btn = ctk.CTkButton(
     flip_overlay,
     text="← Back",
-    font=("Arial", 14, "bold"),
+    font=("Brush Script MT", 14, "bold"),
     fg_color="#e67e22",
     bg_color="#000001",
     hover_color="#d35400",
@@ -473,16 +473,16 @@ time_overlay.place(relx=0.5, rely=0.5, anchor="center", width=400, height=250)
 time_overlay.lower()
 
 time_msg = tk.Label(
-    time_overlay, text="Time's Up!", font=("Arial", 24, "bold"), fg="red", bg="black"
+    time_overlay, text="Time's Up!", font=("Brush Script MT", 24, "bold"), fg="red", bg="black"
 )
 time_msg.pack(pady=(15, 5))
-time_stats = tk.Label(time_overlay, text="", font=("Arial", 16), fg="white", bg="black")
+time_stats = tk.Label(time_overlay, text="", font=("Brush Script MT", 16, "bold"), fg="white", bg="black")
 time_stats.pack(pady=10)
 
 time_reset_btn = ctk.CTkButton(
     time_overlay,
     text="⟳ Reset",
-    font=("Arial", 14, "bold"),
+    font=("Brush Script MT", 14, "bold"),
     fg_color="#e74c3c",
     bg_color="#000001",
     hover_color="#c0392b",
@@ -497,7 +497,7 @@ time_reset_btn.pack(side="left", padx=10)
 time_back_btn = ctk.CTkButton(
     time_overlay,
     text="← Back",
-    font=("Arial", 14, "bold"),
+    font=("Brush Script MT", 14, "bold"),
     fg_color="#e67e22",
     bg_color="#000001",
     hover_color="#d35400",
@@ -727,7 +727,7 @@ def nothover(btn):
 start_btn = ctk.CTkButton(
     home_frame,
     text="START",
-    font=("Comic Sans MS", 24, "bold"),
+    font=("Brush Script MT", 24, "bold"),
     fg_color="#FF7F7F",
     bg_color="#000001",
     text_color="white",
@@ -743,7 +743,7 @@ start_btn.place(relx=0.5, y=400, anchor="center")
 howto_btn = ctk.CTkButton(
     home_frame,
     text="HOW TO PLAY",
-    font=("Comic Sans MS", 24, "bold"),
+    font=("Brush Script MT", 24, "bold"),
     fg_color="#FF7F7F",
     bg_color="#000001",
     text_color="white",
@@ -759,7 +759,7 @@ howto_btn.place(relx=0.5, y=490, anchor="center")
 exit_btn = ctk.CTkButton(
     home_frame,
     text="EXIT",
-    font=("Comic Sans MS", 24, "bold"),
+    font=("Brush Script MT", 24, "bold"),
     fg_color="#FF7F7F",
     bg_color="#000001",
     text_color="white",
@@ -777,7 +777,7 @@ def make_theme_btn(parent, text, y, cmd):
     b = ctk.CTkButton(
         parent,
         text=text,
-        font=("Arial", 19, "bold"),
+        font=("Brush Script MT", 19, "bold"),
         fg_color="#FF7F7F",
         bg_color="#000001",
         text_color="White",
@@ -845,7 +845,7 @@ theme_section.pack(fill="x", pady=8)
 theme_title = tk.Label(
     theme_section,
     text="🎮 Choose a Theme",
-    font=("Comic Sans MS", 18, "bold"),
+    font=("Brush Script MT", 18, "bold"),
     fg="#f85149",  # GitHub red
     bg="#21262d",
 )
@@ -854,7 +854,7 @@ theme_title.pack(anchor="w", padx=20, pady=(15, 8))
 theme_text = tk.Label(
     theme_section,
     text="Pick your favorite anime world — Naruto, One Piece, Slam Dunk, Dragon Ball, or Bleach.",
-    font=("Arial", 13),
+    font=("Brush Script MT", 13, "bold"),
     fg="#f0f6fc",  # GitHub light text
     bg="#21262d",
     wraplength=750,
@@ -869,7 +869,7 @@ diff_section.pack(fill="x", pady=8)
 diff_title = tk.Label(
     diff_section,
     text="⚡ Select a Difficulty",
-    font=("Comic Sans MS", 18, "bold"),
+    font=("Brush Script MT", 18, "bold"),
     fg="#a5d6ff",  # GitHub light blue
     bg="#21262d",
 )
@@ -878,7 +878,7 @@ diff_title.pack(anchor="w", padx=20, pady=(15, 8))
 diff_text = tk.Label(
     diff_section,
     text="Choose your board size:\n4x4 → Easy (8 pairs)\n6x6 → Medium (18 pairs)\n8x8 → Hard (32 pairs)",
-    font=("Arial", 13),
+    font=("Brush Script MT", 13, "bold"),
     fg="#f0f6fc",
     bg="#21262d",
     justify="left",
@@ -892,7 +892,7 @@ gameplay_section.pack(fill="x", pady=8)
 gameplay_title = tk.Label(
     gameplay_section,
     text="🎯 Start the Game",
-    font=("Comic Sans MS", 18, "bold"),
+    font=("Brush Script MT", 18, "bold"),
     fg="#ffa657",  # GitHub orange
     bg="#21262d",
 )
@@ -901,7 +901,7 @@ gameplay_title.pack(anchor="w", padx=20, pady=(15, 8))
 gameplay_text = tk.Label(
     gameplay_section,
     text="Flip two cards to reveal their pictures.\nMatch all pairs before time runs out!",
-    font=("Arial", 13),
+    font=("Brush Script MT", 13, "bold"),
     fg="#f0f6fc",
     bg="#21262d",
     justify="left",
@@ -915,7 +915,7 @@ scoring_section.pack(fill="x", pady=8)
 scoring_title = tk.Label(
     scoring_section,
     text="🏆 Scoring",
-    font=("Comic Sans MS", 18, "bold"),
+    font=("Brush Script MT", 18, "bold"),
     fg="#d2a8ff",  # GitHub purple
     bg="#21262d",
 )
@@ -924,7 +924,7 @@ scoring_title.pack(anchor="w", padx=20, pady=(15, 8))
 scoring_text = tk.Label(
     scoring_section,
     text="+5 points for every correct match.\nLimited flips — don't waste your turns!\nYou win when all pairs are matched!",
-    font=("Arial", 13),
+    font=("Brush Script MT", 13, "bold"),
     fg="#f0f6fc",
     bg="#21262d",
     justify="left",
@@ -938,7 +938,7 @@ controls_section.pack(fill="x", pady=8)
 controls_title = tk.Label(
     controls_section,
     text="🎮 Controls",
-    font=("Comic Sans MS", 18, "bold"),
+    font=("Brush Script MT", 18, "bold"),
     fg="#79c0ff",  # GitHub blue
     bg="#21262d",
 )
@@ -947,7 +947,7 @@ controls_title.pack(anchor="w", padx=20, pady=(15, 8))
 controls_text = tk.Label(
     controls_section,
     text="Pause / Resume – Stop or continue the game.\nReset – Restart the current game.\nBack – Return to the theme menu.",
-    font=("Arial", 13),
+    font=("Brush Script MT", 13, "bold"),
     fg="#f0f6fc",
     bg="#21262d",
     justify="left",
@@ -961,7 +961,7 @@ gameover_section.pack(fill="x", pady=8)
 gameover_title = tk.Label(
     gameover_section,
     text="⚠️ Game Over Conditions",
-    font=("Comic Sans MS", 18, "bold"),
+    font=("Brush Script MT", 18, "bold"),
     fg="#ff7b72",  # GitHub red
     bg="#21262d",
 )
@@ -970,7 +970,7 @@ gameover_title.pack(anchor="w", padx=20, pady=(15, 8))
 gameover_text = tk.Label(
     gameover_section,
     text="Time's up!\nFlip limit reached!\nAll pairs matched = You Win!",
-    font=("Arial", 13),
+    font=("Brush Script MT", 13, "bold"),
     fg="#f0f6fc",
     bg="#21262d",
     justify="left",
@@ -981,7 +981,7 @@ gameover_text.pack(anchor="w", padx=20, pady=(0, 15))
 howto_back_btn = ctk.CTkButton(
     howto_frame,
     text="← Back",
-    font=("Comic Sans MS", 16, "bold"),
+    font=("Brush Script MT", 16, "bold"),
     fg_color="#f85149",  # GitHub red
     bg_color="#0d1117",
     text_color="white",
@@ -1005,7 +1005,7 @@ def make_tile_btn(parent, text, x, y, cmd, bg, abg):
     btn = ctk.CTkButton(
         parent,
         text=text,
-        font=("Arial", 18, "bold"),
+        font=("Brush Script MT", 18, "bold"),
         fg_color=bg,
         bg_color="#000001",
         text_color="white",
@@ -1024,7 +1024,7 @@ def make_back_btn(parent, text, cmd, bg, abg):
     btn = ctk.CTkButton(
         parent,
         text=text,
-        font=("Arial", 18, "bold"),
+        font=("Brush Script MT", 18, "bold"),
         fg_color=bg,
         bg_color="#000001",
         text_color="white",
@@ -1048,7 +1048,7 @@ naruto_gif_frame.place(x=400, y=200, width=800, height=400)
 naruto_4x4_btn = ctk.CTkButton(
     naruto_frame,
     text="4x4",
-    font=("Arial", 18, "bold"),
+    font=("Brush Script MT", 18, "bold"),
     fg_color="#6366f1",
     bg_color="#000001",
     text_color="white",
@@ -1076,7 +1076,7 @@ naruto_4x4_btn.bind("<Leave>", on_4x4_leave)
 naruto_6x6_btn = ctk.CTkButton(
     naruto_frame,
     text="6x6",
-    font=("Arial", 18, "bold"),
+    font=("Brush Script MT", 18, "bold"),
     fg_color="#6366f1",
     bg_color="#000001",
     text_color="white",
@@ -1104,7 +1104,7 @@ naruto_6x6_btn.bind("<Leave>", on_6x6_leave)
 naruto_8x8_btn = ctk.CTkButton(
     naruto_frame,
     text="8x8",
-    font=("Arial", 18, "bold"),
+    font=("Brush Script MT", 18, "bold"),
     fg_color="#6366f1",
     bg_color="#000001",
     text_color="white",
@@ -1376,7 +1376,7 @@ make_back_btn(bleach_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", 
 themes_home_btn = ctk.CTkButton(
     themes_frame,
     text="Home",
-    font=("Arial", 14),
+    font=("Brush Script MT", 14, "bold"),
     fg_color="#FF7F7F",
     bg_color="#000001",
     text_color="white",
