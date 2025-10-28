@@ -5,12 +5,59 @@ from tkinter import PhotoImage
 from PIL import Image, ImageTk
 import customtkinter as ctk
 import random, time, pygame, os
+from tkinter import font
 
 import pywinstyles
 
 
 # --- Initialize music ---
 pygame.mixer.init()
+
+# --- Load custom font ---
+def load_custom_font():
+    """Load Kalufira font with multiple fallback methods"""
+    # Check if font file exists in the directory
+    font_files = ["Kalufira.ttf", "Kalufira.otf", "kalufira.ttf", "kalufira.otf"]
+    font_file_found = None
+    
+    for font_file in font_files:
+        if os.path.exists(font_file):
+            font_file_found = font_file
+            print(f"Found font file: {font_file}")
+            break
+    
+    if font_file_found:
+        try:
+            # Try to load the font file directly
+            import tkinter.font as tkfont
+            root_temp = tk.Tk()
+            root_temp.withdraw()  # Hide the temporary window
+            
+            # Load font from file
+            custom_font = tkfont.Font(family="Kalufira", size=12)
+            root_temp.destroy()
+            return "Kalufira"
+        except Exception as e:
+            print(f"Error loading font file: {e}")
+    
+    # Try different font name variations
+    font_candidates = ["Kalufira", "Kalufira Regular", "Kalufira-Regular"]
+    
+    for font_candidate in font_candidates:
+        try:
+            # Try to create a font object
+            test_font = font.Font(family=font_candidate, size=12)
+            # If successful, return the font name
+            return font_candidate
+        except:
+            continue
+    
+    # If all attempts fail, return fallback
+    print("Kalufira font not found, using Arial as fallback")
+    return "Arial"
+
+font_name = load_custom_font()
+print(f"Using font: {font_name}")
 
 # --- Colors / constants ---
 COLOR_BG_PANEL = "#000000"
@@ -19,8 +66,11 @@ COLOR_BTN_TEXT = "white"
 
 
 # --- Music / SFX helpers ---
+music_muted = False
+
 def play_music():
-    if os.path.exists("narutomusic.mp3"):
+    global music_muted
+    if not music_muted and os.path.exists("narutomusic.mp3"):
         try:
             pygame.mixer.music.load("narutomusic.mp3")
             pygame.mixer.music.play(-1)
@@ -33,6 +83,31 @@ def stop_music():
         pygame.mixer.music.stop()
     except Exception:
         pass
+    
+def play_intro():
+    global music_muted
+    if not music_muted and os.path.exists("intro.mp3"):
+        try:
+            pygame.mixer.music.load("intro.mp3")
+            pygame.mixer.music.play(-1)
+        except Exception:
+            pass
+
+def stop_intro():
+    try:
+        pygame.mixer.music.stop()
+    except Exception:
+        pass
+
+def toggle_mute():
+    global music_muted
+    music_muted = not music_muted
+    if music_muted:
+        stop_music()
+        mute_btn.configure(text="🔊 Unmute")
+    else:
+        play_intro()
+        mute_btn.configure(text="🔇 Mute")
 
 
 clap_sound = (
@@ -56,6 +131,7 @@ slamdunk_frame = tk.Frame(root)
 dragonball_frame = tk.Frame(root)
 bleach_frame = tk.Frame(root)
 game_frame = tk.Frame(root, bg=COLOR_BG_PANEL)
+side_panel = tk.Frame(root, bg=COLOR_BG_PANEL)
 
 ALL_FRAMES = [
     home_frame,
@@ -66,11 +142,13 @@ ALL_FRAMES = [
     dragonball_frame,
     bleach_frame,
     game_frame,
+    side_panel,
 ]
 
 for f in ALL_FRAMES:
     f.place(relwidth=1, relheight=1)
 home_frame.lift()
+play_intro()
 
 
 # --- Background helper ---
@@ -89,7 +167,7 @@ set_bg(home_frame, "homep1.PNG")
 set_bg(themes_frame, "themes.PNG")
 set_bg(naruto_frame, "narutobg.png")
 set_bg(onepiece_frame, "onepiecebg.png")
-set_bg(slamdunk_frame, "slamdunkbg.png")
+set_bg(slamdunk_frame, "slamD.png")
 set_bg(dragonball_frame, "dragonballbg.png")
 set_bg(bleach_frame, "bleachbg.png")
 set_bg(game_frame, "narutogamebg.png")
@@ -98,6 +176,14 @@ set_bg(game_frame, "narutogamebg.png")
 # --- Navigation helpers ---
 def go_to(frame):
     frame.lift()
+    # If we returned to home, ensure intro is playing (unless muted)
+    if frame is home_frame:
+        try:
+            # Only start intro if nothing is currently playing, or current music is not intro
+            # We cannot inspect current track reliably; simply restart intro to be safe
+            play_intro()
+        except Exception:
+            pass
 
 
 current_theme = "naruto"
@@ -112,6 +198,7 @@ def go_to_narutogame(size=4):
     current_theme = "naruto"
     naruto_frame.lower()
     game_frame.lift()
+    # Switch from intro to in-game music
     play_music()
     reset_game(size, theme=current_theme)
 
@@ -169,6 +256,9 @@ timer_running = True
 timer_id = None
 grid_size = 4
 paused = False
+consecutive_failed_flips = 0  # Track consecutive failed flips for hint
+hint_shown = False  # Track if hint is currently shown
+hint_timer = None  # Timer for hint display
 
 # --- Game UI ---
 # === GAME FRAME LAYOUT ===
@@ -187,7 +277,7 @@ score_panel.grid(
     row=0, column=0, padx=20, sticky="w"
 )  # Gibutang sa row=0 col=0, left aligned
 score_label = tk.Label(
-    score_panel, text="Score: 0", font=("Brush Script MT", 18, "bold"), fg="white", bg=COLOR_PANEL_ACCENT
+    score_panel, text="Score: 0", font=(font_name, 18, "bold"), fg="white", bg=COLOR_PANEL_ACCENT
 )  # Label para score
 score_label.pack(side="left", padx=(6, 12))  # Gibutang left sa sulod sa panel
 
@@ -195,7 +285,7 @@ score_label.pack(side="left", padx=(6, 12))  # Gibutang left sa sulod sa panel
 flips_label = tk.Label(
     game_frame,
     text=f"Flips: 0/{flip_limit}",
-    font=("Brush Script MT", 18, "bold"),
+    font=(font_name, 18, "bold"),
     fg="white",
     bg=COLOR_PANEL_ACCENT,
 )  # Label para flips count
@@ -204,7 +294,7 @@ flips_label.grid(row=0, column=1, padx=20)  # Gibutang sa row=0 col=1
 timer_label = tk.Label(
     game_frame,
     text=f"Time: {time_limit}s",
-    font=("Brush Script MT", 18, "bold"),
+    font=(font_name, 18, "bold"),
     fg="white",
     bg=COLOR_PANEL_ACCENT,
 )  # Label para countdown timer
@@ -214,16 +304,14 @@ timer_label.grid(row=0, column=2, padx=20)  # Gibutang sa row=0 col=2
 pause_overlay = tk.Label(
     game_frame,
     text="The Game Paused",
-    font=("Brush Script MT", 48, "bold"),
+    font=(font_name, 48, "bold"),
     fg="yellow",
     bg="black",
 )  # Overlay text "paused"
 pause_overlay.place(relx=0.5, rely=0.5, anchor="center")  # Center overlay
 pause_overlay.lower()  # By default nakatago
 
-# === SIDE PANEL (right control buttons) ===
-side_panel = tk.Frame(game_frame, bg=COLOR_BG_PANEL)  # Container sa right side
-side_panel.place(relx=0.95, rely=0.5, anchor="e")  # Placed near right edge
+# === SIDE PANEL REMOVED - buttons now positioned directly on game frame ===
 
 # === BUTTON CONFIGURATION (shared style) ===
 btn_cfg = {
@@ -245,7 +333,7 @@ def on_pause_toggle():
         paused = False
         timer_running = True
         pause_btn.configure(
-            text="⏸ Pause", fg_color="#e74c3c", hover_color="#c0392b"
+            text="Pause", fg_color="#e67e22", hover_color="#f39c12"
         )  # Change button look
         pause_overlay.lower()  # Hide overlay
         play_music()  # Resume bg music
@@ -254,7 +342,7 @@ def on_pause_toggle():
         paused = True
         timer_running = False
         pause_btn.configure(
-            text="▶ Resume", fg_color="#e74c3c", hover_color="#c0392b"
+            text="Resume", fg_color="#e67e22", hover_color="#f39c12"
         )  # Change button look
         stop_music()  # Stop bg music
         pause_overlay.lift()  # Show overlay
@@ -283,54 +371,60 @@ def back_to_themes():
     themes_frame.lift()  # Show themes menu
 
 
-# === CONTROL BUTTONS (in side_panel) ===
+# === CONTROL BUTTONS (positioned in same column) ===
+# Reset button - top of column
 reset_btn = ctk.CTkButton(
-    side_panel,
-    text="⟳ Reset",
+    game_frame,
+    text="Reset",
     fg_color="#e74c3c",
-    bg_color="#000001",
+    bg_color="transparent",
     hover_color="#c0392b",
-    text_color=COLOR_BTN_TEXT,
-    font=("Brush Script MT", 14, "bold"),
-    width=12 * 10,
-    height=2 * 20,
-    corner_radius=15,
+    text_color="white",
+    font=(font_name, 24, "bold"),
+    width=150,
+    height=60,
+    corner_radius=25,
+    border_width=0,
     command=lambda: reset_game(grid_size, theme=current_theme),
-)  # Reset board
-pywinstyles.set_opacity(reset_btn, color="#000001")
-reset_btn.pack(pady=12, fill="x")  # Add spacing, full width
+)
+pywinstyles.set_opacity(reset_btn, color=COLOR_BG_PANEL)
+reset_btn.place(relx=0.95, rely=0.3, anchor="e")  # Right side, top
 
+# Back button - middle of column
 back_btn = ctk.CTkButton(
-    side_panel,
-    text="← Back",
-    fg_color="#e74c3c",
-    bg_color="#000001",
-    hover_color="#c0392b",
-    text_color=COLOR_BTN_TEXT,
-    font=("Brush Script MT", 14, "bold"),
-    width=12 * 10,
-    height=2 * 20,
-    corner_radius=15,
+    game_frame,
+    text="Back",
+    fg_color="#8e44ad",
+    bg_color="transparent",
+    hover_color="#9b59b6",
+    text_color="white",
+    font=(font_name, 24, "bold"),
+    width=150,
+    height=60,
+    corner_radius=25,
+    border_width=0,
     command=back_to_themes,
-)  # Back to theme menu
-pywinstyles.set_opacity(back_btn, color="#000001")
-back_btn.pack(pady=12, fill="x")
+)
+pywinstyles.set_opacity(back_btn, color=COLOR_BG_PANEL)
+back_btn.place(relx=0.95, rely=0.5, anchor="e")  # Right side, middle
 
+# Pause button - bottom of column
 pause_btn = ctk.CTkButton(
-    side_panel,
-    text="⏸ Pause",
-    fg_color="#e74c3c",
-    bg_color="#000001",
-    hover_color="#c0392b",
-    text_color=COLOR_BTN_TEXT,
-    font=("Brush Script MT", 14, "bold"),
-    width=12 * 10,
-    height=2 * 20,
-    corner_radius=15,
+    game_frame,
+    text="Pause",
+    fg_color="#e67e22",
+    bg_color="transparent",
+    hover_color="#f39c12",
+    text_color="white",
+    font=(font_name, 24, "bold"),
+    width=150,
+    height=60,
+    corner_radius=25,
+    border_width=0,
     command=on_pause_toggle,
-)  # Pause/Resume toggle
-pywinstyles.set_opacity(pause_btn, color="#000001")
-pause_btn.pack(pady=12, fill="x")
+)
+pywinstyles.set_opacity(pause_btn, color=COLOR_BG_PANEL)
+pause_btn.place(relx=0.95, rely=0.7, anchor="e")  # Right side, bottom
 
 # === BOARD FRAME (main card grid area) ===
 board_frame = tk.Frame(game_frame, bg=COLOR_BG_PANEL)  # Board container for cards
@@ -339,7 +433,7 @@ pywinstyles.set_opacity(board_frame, color=COLOR_BG_PANEL)
 
 # === RESULT LABEL (for overlay messages like win/lose) ===
 result_label = tk.Label(
-    game_frame, text="", font=("Brush Script MT", 40, "bold"), fg="yellow", bg="black"
+    game_frame, text="", font=(font_name, 40, "bold"), fg="yellow", bg="black"
 )  # Big text for result
 result_label.place(relx=0.5, rely=0.5, anchor="center")  # Center screen
 result_label.lower()  # Hide by default
@@ -351,10 +445,10 @@ win_overlay.place(relx=0.5, rely=0.5, anchor="center", width=400, height=250)
 win_overlay.lower()
 
 win_msg = tk.Label(
-    win_overlay, text="You Win!", font=("Brush Script MT", 28, "bold"), fg="lime", bg="black"
+    win_overlay, text="You Win!", font=(font_name, 28, "bold"), fg="lime", bg="black"
 )
 win_msg.pack(pady=(15, 5))
-win_stats = tk.Label(win_overlay, text="", font=("Brush Script MT", 16, "bold"), fg="white", bg="black")
+win_stats = tk.Label(win_overlay, text="", font=(font_name, 16, "bold"), fg="white", bg="black")
 win_stats.pack(pady=10)
 
 
@@ -394,7 +488,7 @@ win_btns.pack(side="bottom", pady=15)
 win_reset_btn = ctk.CTkButton(
     win_btns,
     text="⟳ Reset",
-    font=("Brush Script MT", 14, "bold"),
+    font=(font_name, 14, "bold"),
     fg_color="#e74c3c",
     bg_color="#000001",
     hover_color="#c0392b",
@@ -409,7 +503,7 @@ win_reset_btn.pack(side="left", padx=10)
 win_back_btn = ctk.CTkButton(
     win_btns,
     text="← Back",
-    font=("Brush Script MT", 14, "bold"),
+    font=(font_name, 14, "bold"),
     fg_color="#e67e22",
     bg_color="#000001",
     hover_color="#d35400",
@@ -429,18 +523,18 @@ flip_overlay.lower()
 flip_msg = tk.Label(
     flip_overlay,
     text="Flip Limit Reached!",
-    font=("Brush Script MT", 24, "bold"),
+    font=(font_name, 24, "bold"),
     fg="red",
     bg="black",
 )
 flip_msg.pack(pady=(15, 5))
-flip_stats = tk.Label(flip_overlay, text="", font=("Brush Script MT", 16, "bold"), fg="white", bg="black")
+flip_stats = tk.Label(flip_overlay, text="", font=(font_name, 16, "bold"), fg="white", bg="black")
 flip_stats.pack(pady=10)
 
 flip_reset_btn = ctk.CTkButton(
     flip_overlay,
     text="⟳ Reset",
-    font=("Brush Script MT", 14, "bold"),
+    font=(font_name, 14, "bold"),
     fg_color="#e74c3c",
     bg_color="#000001",
     hover_color="#c0392b",
@@ -455,7 +549,7 @@ flip_reset_btn.pack(side="left", padx=10)
 flip_back_btn = ctk.CTkButton(
     flip_overlay,
     text="← Back",
-    font=("Brush Script MT", 14, "bold"),
+    font=(font_name, 14, "bold"),
     fg_color="#e67e22",
     bg_color="#000001",
     hover_color="#d35400",
@@ -473,16 +567,16 @@ time_overlay.place(relx=0.5, rely=0.5, anchor="center", width=400, height=250)
 time_overlay.lower()
 
 time_msg = tk.Label(
-    time_overlay, text="Time's Up!", font=("Brush Script MT", 24, "bold"), fg="red", bg="black"
+    time_overlay, text="Time's Up!", font=(font_name, 24, "bold"), fg="red", bg="black"
 )
 time_msg.pack(pady=(15, 5))
-time_stats = tk.Label(time_overlay, text="", font=("Brush Script MT", 16, "bold"), fg="white", bg="black")
+time_stats = tk.Label(time_overlay, text="", font=(font_name, 16, "bold"), fg="white", bg="black")
 time_stats.pack(pady=10)
 
 time_reset_btn = ctk.CTkButton(
     time_overlay,
     text="⟳ Reset",
-    font=("Brush Script MT", 14, "bold"),
+    font=(font_name, 14, "bold"),
     fg_color="#e74c3c",
     bg_color="#000001",
     hover_color="#c0392b",
@@ -497,7 +591,7 @@ time_reset_btn.pack(side="left", padx=10)
 time_back_btn = ctk.CTkButton(
     time_overlay,
     text="← Back",
-    font=("Brush Script MT", 14, "bold"),
+    font=(font_name, 14, "bold"),
     fg_color="#e67e22",
     bg_color="#000001",
     hover_color="#d35400",
@@ -578,6 +672,62 @@ def cancel_timer():
         timer_id = None
 
 
+def cancel_hint_timer():
+    global hint_timer
+    if hint_timer:
+        try:
+            root.after_cancel(hint_timer)
+        except Exception:
+            pass
+        hint_timer = None
+
+
+def show_hint():
+    """Show hint by making matching cards glow"""
+    global hint_shown, hint_timer
+    
+    if hint_shown:
+        return
+    
+    hint_shown = True
+    
+    # Find pairs that haven't been matched yet
+    unmatched_pairs = []
+    for i in range(len(card_images)):
+        if i not in flipped_cards:
+            for j in range(i + 1, len(card_images)):
+                if j not in flipped_cards and card_images[i] == card_images[j]:
+                    unmatched_pairs.append((i, j))
+                    break
+    
+    if unmatched_pairs:
+        # Show the first unmatched pair
+        card1_idx, card2_idx = unmatched_pairs[0]
+        
+        # Create glowing effect by temporarily showing the cards
+        buttons[card1_idx].config(image=card_images[card1_idx])
+        buttons[card2_idx].config(image=card_images[card2_idx])
+        
+        # Schedule hiding the hint after 2 seconds
+        hint_timer = root.after(2000, hide_hint)
+
+
+def hide_hint():
+    """Hide the hint by covering the cards again"""
+    global hint_shown, hint_timer
+    
+    if not hint_shown:
+        return
+    
+    hint_shown = False
+    hint_timer = None
+    
+    # Cover all cards that aren't permanently flipped
+    for i, btn in enumerate(buttons):
+        if i not in flipped_cards:
+            btn.config(image=back_image)
+
+
 def on_card_click(idx):
     global first_card, second_card, flips
     if paused or not timer_running:
@@ -601,16 +751,23 @@ def on_card_click(idx):
 
 
 def check_match():
-    global first_card, second_card, score, flips
+    global first_card, second_card, score, flips, consecutive_failed_flips
     if card_images[first_card] == card_images[second_card]:
         flipped_cards.extend([first_card, second_card])
         score += 5
         score_label.config(text=f"Score: {score}")
+        consecutive_failed_flips = 0  # Reset failed flips counter on successful match
     else:
         flips += 1
+        consecutive_failed_flips += 1  # Increment failed flips counter
         flips_label.config(text=f"Flips: {flips}/{flip_limit}")
         buttons[first_card].config(image=back_image)
         buttons[second_card].config(image=back_image)
+        
+        # Show hint after 5 consecutive failed flips
+        if consecutive_failed_flips >= 5:
+            root.after(500, show_hint)  # Show hint after a short delay
+    
     first_card = None
     second_card = None
     if len(flipped_cards) == len(card_images):
@@ -653,8 +810,10 @@ def game_over(message):
 def reset_game(size=4, theme="naruto"):
     global card_images, first_card, second_card, flipped_cards
     global score, flips, time_left, timer_running, buttons, grid_size, back_image, paused
+    global consecutive_failed_flips, hint_shown, hint_timer
 
     cancel_timer()
+    cancel_hint_timer()
     if clap_sound:
         clap_sound.stop()
     if lose_sound:
@@ -696,6 +855,8 @@ def reset_game(size=4, theme="naruto"):
     time_left = time_limit
     timer_running = True
     paused = False
+    consecutive_failed_flips = 0  # Reset hint counter
+    hint_shown = False  # Reset hint state
 
     score_label.config(text="Score: 0")
     flips_label.config(text=f"Flips: 0/{flip_limit}")
@@ -704,7 +865,7 @@ def reset_game(size=4, theme="naruto"):
     result_label.lower()
     win_overlay.lower()
     pause_overlay.lower()
-    pause_btn.configure(text="⏸ Pause", fg_color="#e74c3c")
+    pause_btn.configure(text="Pause", fg_color="#e67e22")
     update_timer()
 
 
@@ -727,12 +888,12 @@ def nothover(btn):
 start_btn = ctk.CTkButton(
     home_frame,
     text="START",
-    font=("Brush Script MT", 24, "bold"),
+    font=(font_name, 24, "bold"),
     fg_color="#FF7F7F",
     bg_color="#000001",
     text_color="white",
     hover_color="#28a75a",
-    width=13 * 11,
+    width=200,
     height=50,
     corner_radius=20,
     command=lambda: go_to(themes_frame),
@@ -743,12 +904,12 @@ start_btn.place(relx=0.5, y=400, anchor="center")
 howto_btn = ctk.CTkButton(
     home_frame,
     text="HOW TO PLAY",
-    font=("Brush Script MT", 24, "bold"),
+    font=(font_name, 24, "bold"),
     fg_color="#FF7F7F",
     bg_color="#000001",
     text_color="white",
     hover_color="#28a75a",
-    width=13 * 11,
+    width=200,
     height=50,
     corner_radius=20,
     command=lambda: go_to(howto_frame),
@@ -759,25 +920,42 @@ howto_btn.place(relx=0.5, y=490, anchor="center")
 exit_btn = ctk.CTkButton(
     home_frame,
     text="EXIT",
-    font=("Brush Script MT", 24, "bold"),
+    font=(font_name, 24, "bold"),
     fg_color="#FF7F7F",
     bg_color="#000001",
     text_color="white",
     hover_color="#28a75a",
-    width=13 * 11,
+    width=200,
     height=50,
     corner_radius=20,
-    command=lambda: go_to(exit_app()),
+    command=exit_app,
 )
 pywinstyles.set_opacity(exit_btn, color="#000001")
 exit_btn.place(relx=0.5, y=580, anchor="center")
+
+# Mute/Unmute button
+mute_btn = ctk.CTkButton(
+    home_frame,
+    text="🔇 Mute",
+    font=(font_name, 24, "bold"),
+    fg_color="#FF7F7F",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#28a75a",
+    width=200,
+    height=50,
+    corner_radius=20,
+    command=toggle_mute,
+)
+pywinstyles.set_opacity(mute_btn, color="#000001")
+mute_btn.place(relx=0.5, y=680, anchor="center")
 
 
 def make_theme_btn(parent, text, y, cmd):
     b = ctk.CTkButton(
         parent,
         text=text,
-        font=("Brush Script MT", 19, "bold"),
+        font=(font_name, 19, "bold"),
         fg_color="#FF7F7F",
         bg_color="#000001",
         text_color="White",
@@ -845,7 +1023,7 @@ theme_section.pack(fill="x", pady=8)
 theme_title = tk.Label(
     theme_section,
     text="🎮 Choose a Theme",
-    font=("Brush Script MT", 18, "bold"),
+    font=(font_name, 18, "bold"),
     fg="#f85149",  # GitHub red
     bg="#21262d",
 )
@@ -854,7 +1032,7 @@ theme_title.pack(anchor="w", padx=20, pady=(15, 8))
 theme_text = tk.Label(
     theme_section,
     text="Pick your favorite anime world — Naruto, One Piece, Slam Dunk, Dragon Ball, or Bleach.",
-    font=("Brush Script MT", 13, "bold"),
+    font=(font_name, 13, "bold"),
     fg="#f0f6fc",  # GitHub light text
     bg="#21262d",
     wraplength=750,
@@ -869,7 +1047,7 @@ diff_section.pack(fill="x", pady=8)
 diff_title = tk.Label(
     diff_section,
     text="⚡ Select a Difficulty",
-    font=("Brush Script MT", 18, "bold"),
+    font=(font_name, 18, "bold"),
     fg="#a5d6ff",  # GitHub light blue
     bg="#21262d",
 )
@@ -878,7 +1056,7 @@ diff_title.pack(anchor="w", padx=20, pady=(15, 8))
 diff_text = tk.Label(
     diff_section,
     text="Choose your board size:\n4x4 → Easy (8 pairs)\n6x6 → Medium (18 pairs)\n8x8 → Hard (32 pairs)",
-    font=("Brush Script MT", 13, "bold"),
+    font=(font_name, 13, "bold"),
     fg="#f0f6fc",
     bg="#21262d",
     justify="left",
@@ -892,7 +1070,7 @@ gameplay_section.pack(fill="x", pady=8)
 gameplay_title = tk.Label(
     gameplay_section,
     text="🎯 Start the Game",
-    font=("Brush Script MT", 18, "bold"),
+    font=(font_name, 18, "bold"),
     fg="#ffa657",  # GitHub orange
     bg="#21262d",
 )
@@ -901,7 +1079,7 @@ gameplay_title.pack(anchor="w", padx=20, pady=(15, 8))
 gameplay_text = tk.Label(
     gameplay_section,
     text="Flip two cards to reveal their pictures.\nMatch all pairs before time runs out!",
-    font=("Brush Script MT", 13, "bold"),
+    font=(font_name, 13, "bold"),
     fg="#f0f6fc",
     bg="#21262d",
     justify="left",
@@ -915,7 +1093,7 @@ scoring_section.pack(fill="x", pady=8)
 scoring_title = tk.Label(
     scoring_section,
     text="🏆 Scoring",
-    font=("Brush Script MT", 18, "bold"),
+    font=(font_name, 18, "bold"),
     fg="#d2a8ff",  # GitHub purple
     bg="#21262d",
 )
@@ -924,7 +1102,7 @@ scoring_title.pack(anchor="w", padx=20, pady=(15, 8))
 scoring_text = tk.Label(
     scoring_section,
     text="+5 points for every correct match.\nLimited flips — don't waste your turns!\nYou win when all pairs are matched!",
-    font=("Brush Script MT", 13, "bold"),
+    font=(font_name, 13, "bold"),
     fg="#f0f6fc",
     bg="#21262d",
     justify="left",
@@ -938,7 +1116,7 @@ controls_section.pack(fill="x", pady=8)
 controls_title = tk.Label(
     controls_section,
     text="🎮 Controls",
-    font=("Brush Script MT", 18, "bold"),
+    font=(font_name, 18, "bold"),
     fg="#79c0ff",  # GitHub blue
     bg="#21262d",
 )
@@ -947,7 +1125,7 @@ controls_title.pack(anchor="w", padx=20, pady=(15, 8))
 controls_text = tk.Label(
     controls_section,
     text="Pause / Resume – Stop or continue the game.\nReset – Restart the current game.\nBack – Return to the theme menu.",
-    font=("Brush Script MT", 13, "bold"),
+    font=(font_name, 13, "bold"),
     fg="#f0f6fc",
     bg="#21262d",
     justify="left",
@@ -961,7 +1139,7 @@ gameover_section.pack(fill="x", pady=8)
 gameover_title = tk.Label(
     gameover_section,
     text="⚠️ Game Over Conditions",
-    font=("Brush Script MT", 18, "bold"),
+    font=(font_name, 18, "bold"),
     fg="#ff7b72",  # GitHub red
     bg="#21262d",
 )
@@ -970,7 +1148,7 @@ gameover_title.pack(anchor="w", padx=20, pady=(15, 8))
 gameover_text = tk.Label(
     gameover_section,
     text="Time's up!\nFlip limit reached!\nAll pairs matched = You Win!",
-    font=("Brush Script MT", 13, "bold"),
+    font=(font_name, 13, "bold"),
     fg="#f0f6fc",
     bg="#21262d",
     justify="left",
@@ -981,7 +1159,7 @@ gameover_text.pack(anchor="w", padx=20, pady=(0, 15))
 howto_back_btn = ctk.CTkButton(
     howto_frame,
     text="← Back",
-    font=("Brush Script MT", 16, "bold"),
+    font=(font_name, 16, "bold"),
     fg_color="#f85149",  # GitHub red
     bg_color="#0d1117",
     text_color="white",
@@ -1005,7 +1183,7 @@ def make_tile_btn(parent, text, x, y, cmd, bg, abg):
     btn = ctk.CTkButton(
         parent,
         text=text,
-        font=("Brush Script MT", 18, "bold"),
+        font=(font_name, 18, "bold"),
         fg_color=bg,
         bg_color="#000001",
         text_color="white",
@@ -1024,7 +1202,7 @@ def make_back_btn(parent, text, cmd, bg, abg):
     btn = ctk.CTkButton(
         parent,
         text=text,
-        font=("Brush Script MT", 18, "bold"),
+        font=(font_name, 18, "bold"),
         fg_color=bg,
         bg_color="#000001",
         text_color="white",
@@ -1048,7 +1226,7 @@ naruto_gif_frame.place(x=400, y=200, width=800, height=400)
 naruto_4x4_btn = ctk.CTkButton(
     naruto_frame,
     text="4x4",
-    font=("Brush Script MT", 18, "bold"),
+    font=(font_name, 18, "bold"),
     fg_color="#6366f1",
     bg_color="#000001",
     text_color="white",
@@ -1076,7 +1254,7 @@ naruto_4x4_btn.bind("<Leave>", on_4x4_leave)
 naruto_6x6_btn = ctk.CTkButton(
     naruto_frame,
     text="6x6",
-    font=("Brush Script MT", 18, "bold"),
+    font=(font_name, 18, "bold"),
     fg_color="#6366f1",
     bg_color="#000001",
     text_color="white",
@@ -1104,7 +1282,7 @@ naruto_6x6_btn.bind("<Leave>", on_6x6_leave)
 naruto_8x8_btn = ctk.CTkButton(
     naruto_frame,
     text="8x8",
-    font=("Brush Script MT", 18, "bold"),
+    font=(font_name, 18, "bold"),
     fg_color="#6366f1",
     bg_color="#000001",
     text_color="white",
@@ -1311,6 +1489,70 @@ def load_auto_gif(gif_file):
         except Exception:
             pass
 
+# Generic loader to display a GIF/image into a specific frame
+def load_gif_into(target_frame, gif_file):
+    global current_gif_label
+    if os.path.exists(gif_file):
+        try:
+            if current_gif_label:
+                current_gif_label.destroy()
+            from PIL import Image, ImageTk
+            pil_img = Image.open(gif_file)
+            frame_width, frame_height = 760, 360
+            img_width, img_height = pil_img.size
+            scale_w = frame_width / img_width
+            scale_h = frame_height / img_height
+            scale = min(scale_w, scale_h)
+            new_width = int(img_width * scale)
+            new_height = int(img_height * scale)
+            pil_img = pil_img.resize((new_width, new_height), Image.Resampling.LANCZOS)
+            img = ImageTk.PhotoImage(pil_img)
+            current_gif_label = tk.Label(target_frame, image=img, bg="#1A1A2E")
+            current_gif_label.place(relx=0.5, rely=0.5, anchor="center")
+            current_gif_label.image = img
+        except Exception:
+            pass
+
+# One Piece hover loaders
+def load_op_4x4_gif():
+    load_gif_into(onepiece_gif_frame, "GIF-4x4.png")
+
+def load_op_6x6_gif():
+    load_gif_into(onepiece_gif_frame, "GIF-6x6.png")
+
+def load_op_8x8_gif():
+    load_gif_into(onepiece_gif_frame, "GIF-8x8.png")
+
+# Slam Dunk hover loaders
+def load_slam_4x4_gif():
+    load_gif_into(slamdunk_gif_frame, "GIF-4x4.png")
+
+def load_slam_6x6_gif():
+    load_gif_into(slamdunk_gif_frame, "GIF-6x6.png")
+
+def load_slam_8x8_gif():
+    load_gif_into(slamdunk_gif_frame, "GIF-8x8.png")
+
+# Dragon Ball hover loaders
+def load_db_4x4_gif():
+    load_gif_into(dragonball_gif_frame, "GIF-4x4.png")
+
+def load_db_6x6_gif():
+    load_gif_into(dragonball_gif_frame, "GIF-6x6.png")
+
+def load_db_8x8_gif():
+    load_gif_into(dragonball_gif_frame, "GIF-8x8.png")
+
+# Bleach hover loaders
+def load_bleach_4x4_gif():
+    load_gif_into(bleach_gif_frame, "GIF-4x4.png")
+
+def load_bleach_6x6_gif():
+    load_gif_into(bleach_gif_frame, "GIF-6x6.png")
+
+def load_bleach_8x8_gif():
+    load_gif_into(bleach_gif_frame, "GIF-8x8.png")
+
 # Start auto transitions when naruto frame is shown
 def go_to_naruto_with_auto_transitions():
     go_to(naruto_frame)
@@ -1318,65 +1560,387 @@ def go_to_naruto_with_auto_transitions():
 
 # GIF frame is ready for hover effects
 
-# One Piece choose tiles
-make_tile_btn(
-    onepiece_frame, "4x4", 200, 345, lambda: go_to_opgame(4), "#6366f1", "#4f46e5"
-)
-make_tile_btn(
-    onepiece_frame, "6x6", 600, 345, lambda: go_to_opgame(6), "#6366f1", "#4f46e5"
-)
-make_tile_btn(
-    onepiece_frame, "8x8", 1000, 345, lambda: go_to_opgame(8), "#6366f1", "#4f46e5"
-)
-make_back_btn(
-    onepiece_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626"
-)
+# One Piece choose tiles - copy naruto layout
+# Add GIF frame to the right side of onepiece_frame (landscape orientation)
+onepiece_gif_frame = tk.Frame(onepiece_frame, bg="#1A1A2E", relief="raised", bd=3)
+onepiece_gif_frame.place(x=400, y=200, width=800, height=400)
 
-# Slam Dunk choose tiles
-make_tile_btn(
-    slamdunk_frame, "4x4", 200, 345, lambda: go_to_slamgame(4), "#6366f1", "#4f46e5"
+# Create 4x4 button with hover effect
+onepiece_4x4_btn = ctk.CTkButton(
+    onepiece_frame,
+    text="4x4",
+    font=(font_name, 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_opgame(4),
 )
-make_tile_btn(
-    slamdunk_frame, "6x6", 600, 345, lambda: go_to_slamgame(6), "#6366f1", "#4f46e5"
-)
-make_tile_btn(
-    slamdunk_frame, "8x8", 1000, 345, lambda: go_to_slamgame(8), "#6366f1", "#4f46e5"
-)
-make_back_btn(
-    slamdunk_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626"
-)
+pywinstyles.set_opacity(onepiece_4x4_btn, color="#000001")
+onepiece_4x4_btn.place(x=150, y=300)
 
-# Dragon Ball choose tiles
-make_tile_btn(
-    dragonball_frame, "4x4", 200, 345, lambda: go_to_dbgame(4), "#6366f1", "#4f46e5"
-)
-make_tile_btn(
-    dragonball_frame, "6x6", 600, 345, lambda: go_to_dbgame(6), "#6366f1", "#4f46e5"
-)
-make_tile_btn(
-    dragonball_frame, "8x8", 1000, 345, lambda: go_to_dbgame(8), "#6366f1", "#4f46e5"
-)
-make_back_btn(
-    dragonball_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626"
-)
+# Add hover effects to 4x4 button
+def on_op_4x4_enter(event):
+    stop_auto_transitions()
+    load_op_4x4_gif()
 
-# Bleach choose tiles
-make_tile_btn(
-    bleach_frame, "4x4", 200, 345, lambda: go_to_bleachgame(4), "#6366f1", "#4f46e5"
+def on_op_4x4_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+onepiece_4x4_btn.bind("<Enter>", on_op_4x4_enter)
+onepiece_4x4_btn.bind("<Leave>", on_op_4x4_leave)
+
+# Create 6x6 button with hover effect
+onepiece_6x6_btn = ctk.CTkButton(
+    onepiece_frame,
+    text="6x6",
+    font=(font_name, 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_opgame(6),
 )
-make_tile_btn(
-    bleach_frame, "6x6", 600, 345, lambda: go_to_bleachgame(6), "#6366f1", "#4f46e5"
+pywinstyles.set_opacity(onepiece_6x6_btn, color="#000001")
+onepiece_6x6_btn.place(x=150, y=400)
+
+# Add hover effects to 6x6 button
+def on_op_6x6_enter(event):
+    stop_auto_transitions()
+    load_op_6x6_gif()
+
+def on_op_6x6_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+onepiece_6x6_btn.bind("<Enter>", on_op_6x6_enter)
+onepiece_6x6_btn.bind("<Leave>", on_op_6x6_leave)
+
+# Create 8x8 button with hover effect
+onepiece_8x8_btn = ctk.CTkButton(
+    onepiece_frame,
+    text="8x8",
+    font=(font_name, 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_opgame(8),
 )
-make_tile_btn(
-    bleach_frame, "8x8", 1000, 345, lambda: go_to_bleachgame(8), "#6366f1", "#4f46e5"
+pywinstyles.set_opacity(onepiece_8x8_btn, color="#000001")
+onepiece_8x8_btn.place(x=150, y=500)
+
+# Add hover effects to 8x8 button
+def on_op_8x8_enter(event):
+    stop_auto_transitions()
+    load_op_8x8_gif()
+
+def on_op_8x8_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+onepiece_8x8_btn.bind("<Enter>", on_op_8x8_enter)
+onepiece_8x8_btn.bind("<Leave>", on_op_8x8_leave)
+
+make_back_btn(onepiece_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626")
+
+# Slam Dunk choose tiles - copy naruto layout
+# Add GIF frame to the right side of slamdunk_frame (landscape orientation)
+slamdunk_gif_frame = tk.Frame(slamdunk_frame, bg="#1A1A2E", relief="raised", bd=3)
+slamdunk_gif_frame.place(x=400, y=200, width=800, height=400)
+
+# Create 4x4 button with hover effect
+slamdunk_4x4_btn = ctk.CTkButton(
+    slamdunk_frame,
+    text="4x4",
+    font=(font_name, 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_slamgame(4),
 )
+pywinstyles.set_opacity(slamdunk_4x4_btn, color="#000001")
+slamdunk_4x4_btn.place(x=150, y=300)
+
+# Add hover effects to 4x4 button
+def on_slam_4x4_enter(event):
+    stop_auto_transitions()
+    load_slam_4x4_gif()
+
+def on_slam_4x4_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+slamdunk_4x4_btn.bind("<Enter>", on_slam_4x4_enter)
+slamdunk_4x4_btn.bind("<Leave>", on_slam_4x4_leave)
+
+# Create 6x6 button with hover effect
+slamdunk_6x6_btn = ctk.CTkButton(
+    slamdunk_frame,
+    text="6x6",
+    font=(font_name, 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_slamgame(6),
+)
+pywinstyles.set_opacity(slamdunk_6x6_btn, color="#000001")
+slamdunk_6x6_btn.place(x=150, y=400)
+
+# Add hover effects to 6x6 button
+def on_slam_6x6_enter(event):
+    stop_auto_transitions()
+    load_slam_6x6_gif()
+
+def on_slam_6x6_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+slamdunk_6x6_btn.bind("<Enter>", on_slam_6x6_enter)
+slamdunk_6x6_btn.bind("<Leave>", on_slam_6x6_leave)
+
+# Create 8x8 button with hover effect
+slamdunk_8x8_btn = ctk.CTkButton(
+    slamdunk_frame,
+    text="8x8",
+    font=(font_name, 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_slamgame(8),
+)
+pywinstyles.set_opacity(slamdunk_8x8_btn, color="#000001")
+slamdunk_8x8_btn.place(x=150, y=500)
+
+# Add hover effects to 8x8 button
+def on_slam_8x8_enter(event):
+    stop_auto_transitions()
+    load_slam_8x8_gif()
+
+def on_slam_8x8_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+slamdunk_8x8_btn.bind("<Enter>", on_slam_8x8_enter)
+slamdunk_8x8_btn.bind("<Leave>", on_slam_8x8_leave)
+
+make_back_btn(slamdunk_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626")
+
+# Dragon Ball choose tiles - copy naruto layout
+# Add GIF frame to the right side of dragonball_frame (landscape orientation)
+dragonball_gif_frame = tk.Frame(dragonball_frame, bg="#1A1A2E", relief="raised", bd=3)
+dragonball_gif_frame.place(x=400, y=200, width=800, height=400)
+
+# Create 4x4 button with hover effect
+dragonball_4x4_btn = ctk.CTkButton(
+    dragonball_frame,
+    text="4x4",
+    font=(font_name, 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_dbgame(4),
+)
+pywinstyles.set_opacity(dragonball_4x4_btn, color="#000001")
+dragonball_4x4_btn.place(x=150, y=300)
+
+# Add hover effects to 4x4 button
+def on_db_4x4_enter(event):
+    stop_auto_transitions()
+    load_db_4x4_gif()
+
+def on_db_4x4_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+dragonball_4x4_btn.bind("<Enter>", on_db_4x4_enter)
+dragonball_4x4_btn.bind("<Leave>", on_db_4x4_leave)
+
+# Create 6x6 button with hover effect
+dragonball_6x6_btn = ctk.CTkButton(
+    dragonball_frame,
+    text="6x6",
+    font=(font_name, 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_dbgame(6),
+)
+pywinstyles.set_opacity(dragonball_6x6_btn, color="#000001")
+dragonball_6x6_btn.place(x=150, y=400)
+
+# Add hover effects to 6x6 button
+def on_db_6x6_enter(event):
+    stop_auto_transitions()
+    load_db_6x6_gif()
+
+def on_db_6x6_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+dragonball_6x6_btn.bind("<Enter>", on_db_6x6_enter)
+dragonball_6x6_btn.bind("<Leave>", on_db_6x6_leave)
+
+# Create 8x8 button with hover effect
+dragonball_8x8_btn = ctk.CTkButton(
+    dragonball_frame,
+    text="8x8",
+    font=(font_name, 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_dbgame(8),
+)
+pywinstyles.set_opacity(dragonball_8x8_btn, color="#000001")
+dragonball_8x8_btn.place(x=150, y=500)
+
+# Add hover effects to 8x8 button
+def on_db_8x8_enter(event):
+    stop_auto_transitions()
+    load_db_8x8_gif()
+
+def on_db_8x8_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+dragonball_8x8_btn.bind("<Enter>", on_db_8x8_enter)
+dragonball_8x8_btn.bind("<Leave>", on_db_8x8_leave)
+
+make_back_btn(dragonball_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626")
+
+# Bleach choose tiles - copy naruto layout
+# Add GIF frame to the right side of bleach_frame (landscape orientation)
+bleach_gif_frame = tk.Frame(bleach_frame, bg="#1A1A2E", relief="raised", bd=3)
+bleach_gif_frame.place(x=400, y=200, width=800, height=400)
+
+# Create 4x4 button with hover effect
+bleach_4x4_btn = ctk.CTkButton(
+    bleach_frame,
+    text="4x4",
+    font=(font_name, 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_bleachgame(4),
+)
+pywinstyles.set_opacity(bleach_4x4_btn, color="#000001")
+bleach_4x4_btn.place(x=150, y=300)
+
+# Add hover effects to 4x4 button
+def on_bleach_4x4_enter(event):
+    stop_auto_transitions()
+    load_bleach_4x4_gif()
+
+def on_bleach_4x4_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+bleach_4x4_btn.bind("<Enter>", on_bleach_4x4_enter)
+bleach_4x4_btn.bind("<Leave>", on_bleach_4x4_leave)
+
+# Create 6x6 button with hover effect
+bleach_6x6_btn = ctk.CTkButton(
+    bleach_frame,
+    text="6x6",
+    font=(font_name, 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_bleachgame(6),
+)
+pywinstyles.set_opacity(bleach_6x6_btn, color="#000001")
+bleach_6x6_btn.place(x=150, y=400)
+
+# Add hover effects to 6x6 button
+def on_bleach_6x6_enter(event):
+    stop_auto_transitions()
+    load_bleach_6x6_gif()
+
+def on_bleach_6x6_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+bleach_6x6_btn.bind("<Enter>", on_bleach_6x6_enter)
+bleach_6x6_btn.bind("<Leave>", on_bleach_6x6_leave)
+
+# Create 8x8 button with hover effect
+bleach_8x8_btn = ctk.CTkButton(
+    bleach_frame,
+    text="8x8",
+    font=(font_name, 18, "bold"),
+    fg_color="#6366f1",
+    bg_color="#000001",
+    text_color="white",
+    hover_color="#4f46e5",
+    width=100,
+    height=50,
+    corner_radius=15,
+    command=lambda: go_to_bleachgame(8),
+)
+pywinstyles.set_opacity(bleach_8x8_btn, color="#000001")
+bleach_8x8_btn.place(x=150, y=500)
+
+# Add hover effects to 8x8 button
+def on_bleach_8x8_enter(event):
+    stop_auto_transitions()
+    load_bleach_8x8_gif()
+
+def on_bleach_8x8_leave(event):
+    clear_gif()
+    start_auto_transitions()
+
+bleach_8x8_btn.bind("<Enter>", on_bleach_8x8_enter)
+bleach_8x8_btn.bind("<Leave>", on_bleach_8x8_leave)
+
 make_back_btn(bleach_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626")
 
 # --- Ensure theme selection also has a visible Back to Themes button on each theme main (optional) ---
 themes_home_btn = ctk.CTkButton(
     themes_frame,
     text="Home",
-    font=("Brush Script MT", 14, "bold"),
+    font=(font_name, 14, "bold"),
     fg_color="#FF7F7F",
     bg_color="#000001",
     text_color="white",
