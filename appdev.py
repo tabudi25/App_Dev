@@ -15,9 +15,12 @@ pygame.mixer.init()
 
 # --- Load custom font ---
 def load_custom_font():
-    """Load Kalufira font with multiple fallback methods"""
+    """Load Arcade Classic font with multiple fallback methods"""
     # Check if font file exists in the directory
-    font_files = ["Kalufira.ttf", "Kalufira.otf", "kalufira.ttf", "kalufira.otf"]
+    font_files = ["Arcade Classic.ttf", "ARCADECLASSIC.TTF", "ArcadeClassic.ttf", "ArcadeClassic.otf", 
+                  "arcadeclassic.ttf", "arcadeclassic.otf", "Arcade Classic.otf",
+                  "PressStart2P.ttf", "PressStart2P.otf", "pressstart2p.ttf", "pressstart2p.otf",
+                  "ARCADECLASSIC.OTF"]
     font_file_found = None
     
     for font_file in font_files:
@@ -28,36 +31,119 @@ def load_custom_font():
     
     if font_file_found:
         try:
-            # Try to load the font file directly
+            # First, try to install the font to Windows
+            try:
+                import shutil
+                fonts_dir = os.path.join(os.environ['WINDIR'], 'Fonts')
+                font_dest = os.path.join(fonts_dir, os.path.basename(font_file_found))
+                
+                # Copy font to Windows Fonts directory if not already there
+                if not os.path.exists(font_dest):
+                    try:
+                        shutil.copy2(font_file_found, font_dest)
+                        print(f"Font copied to Windows Fonts directory")
+                    except PermissionError:
+                        print(f"Note: Could not copy font automatically. Please install {font_file_found} manually.")
+                else:
+                    print(f"Font already in Windows Fonts directory")
+                
+                # Try to register font using win32api if available
+                try:
+                    import win32api
+                    import win32con
+                    win32api.AddFontResource(font_dest)
+                    win32api.SendMessage(win32con.HWND_BROADCAST, win32con.WM_FONTCHANGE, 0, 0)
+                    print(f"Font registered with Windows")
+                except ImportError:
+                    pass  # pywin32 not available, but font is copied
+                except Exception as e:
+                    print(f"Note: Could not register font: {e}")
+            except Exception as e:
+                print(f"Note: Font installation attempt: {e}")
+            
+            # Now try to load the font
             import tkinter.font as tkfont
             root_temp = tk.Tk()
             root_temp.withdraw()  # Hide the temporary window
             
-            # Load font from file
-            custom_font = tkfont.Font(family="Kalufira", size=12)
-            root_temp.destroy()
-            return "Kalufira"
+            # Determine font family name from file
+            if "PressStart2P" in font_file_found or "pressstart2p" in font_file_found:
+                font_family = "Press Start 2P"
+            else:
+                font_family = "Arcade Classic"
+            
+            # Try to load font by family name (after installation attempt)
+            try:
+                custom_font = tkfont.Font(family=font_family, size=12)
+                actual_font = custom_font.actual()
+                actual_family = actual_font.get('family', '')
+                
+                # Check if it actually loaded the right font (not a fallback)
+                if font_family.lower() in actual_family.lower() or 'arcade' in actual_family.lower():
+                    root_temp.destroy()
+                    print(f"Successfully loaded font: {actual_family}")
+                    return actual_family
+                else:
+                    # Font not installed yet, but we'll return the name anyway
+                    print(f"Font '{font_family}' not yet available, but will be used when installed")
+                    root_temp.destroy()
+                    return font_family
+            except Exception as e:
+                print(f"Could not load font by name: {e}")
+                root_temp.destroy()
+                return font_family
         except Exception as e:
             print(f"Error loading font file: {e}")
     
-    # Try different font name variations
-    font_candidates = ["Kalufira", "Kalufira Regular", "Kalufira-Regular"]
+    # Try different arcade font name variations (most common first)
+    font_candidates = [
+        "Arcade Classic", "ArcadeClassic", "ARCADECLASSIC", "Arcade Classic Regular",
+        "Press Start 2P", "PressStart2P", "Press Start",
+        "Arcade", "Arcade Interlaced", "Arcade Rounded", "Arcade Normal",
+        "Courier New", "Lucida Console", "Consolas", "Fixedsys", "Terminal"  # Monospace fallbacks with retro feel
+    ]
     
     for font_candidate in font_candidates:
         try:
             # Try to create a font object
             test_font = font.Font(family=font_candidate, size=12)
+            # Verify it actually works
+            test_font.actual()
             # If successful, return the font name
+            print(f"Using system font: {font_candidate}")
             return font_candidate
         except:
             continue
     
-    # If all attempts fail, return fallback
-    print("Kalufira font not found, using Arial as fallback")
-    return "Arial"
+    # If all attempts fail, use monospace fallback (more arcade-like than Arial)
+    print("Arcade Classic font not found, using Courier New as fallback")
+    print("To get Arcade Classic font, download from: https://www.dafont.com/arcade-classic.font")
+    return "Courier New"
 
 font_name = load_custom_font()
 print(f"Using font: {font_name}")
+
+# Check if font is actually working
+if font_name == "Arcade Classic":
+    try:
+        # Create a test root to check font
+        test_root = tk.Tk()
+        test_root.withdraw()
+        test_font = font.Font(family="Arcade Classic", size=12)
+        actual = test_font.actual()
+        test_root.destroy()
+        
+        if 'arcade' not in actual.get('family', '').lower():
+            print("\n" + "="*70)
+            print("⚠️  WARNING: Arcade Classic font may not be installed!")
+            print("="*70)
+            print("To install the font:")
+            print("1. Right-click on 'Arcade Classic.ttf' in this folder")
+            print("2. Select 'Install' or 'Install for all users'")
+            print("3. Restart this application")
+            print("="*70 + "\n")
+    except:
+        pass
 
 # --- Colors / constants ---
 COLOR_BG_PANEL = "#000000"
@@ -68,9 +154,30 @@ COLOR_BTN_TEXT = "white"
 # --- Music / SFX helpers ---
 music_muted = False
 
-def play_music():
+# Theme-specific music files mapping
+theme_music = {
+    "naruto": "narutomusic.mp3",
+    "op": "onepiecemusic.mp3",
+    "slam": "slamdunkmusic.mp3",
+    "db": "dragonballmusic.mp3",
+    "bleach": "bleachmusic.mp3",
+}
+
+def play_music(theme="naruto"):
+    """Play theme-specific background music"""
     global music_muted
-    if not music_muted and os.path.exists("narutomusic.mp3"):
+    if music_muted:
+        return
+    
+    music_file = theme_music.get(theme, "narutomusic.mp3")
+    if os.path.exists(music_file):
+        try:
+            pygame.mixer.music.load(music_file)
+            pygame.mixer.music.play(-1)
+        except Exception:
+            pass
+    # Fallback to naruto music if theme music doesn't exist
+    elif os.path.exists("narutomusic.mp3"):
         try:
             pygame.mixer.music.load("narutomusic.mp3")
             pygame.mixer.music.play(-1)
@@ -121,6 +228,40 @@ lose_sound = (
 root = tk.Tk()
 root.geometry("1920x1090")
 root.title("Flip Memory Game")
+
+# After root window is created, verify and install font if needed
+try:
+    # Check if font file exists and install it
+    font_file = "Arcade Classic.ttf"
+    if os.path.exists(font_file):
+        try:
+            import shutil
+            fonts_dir = os.path.join(os.environ['WINDIR'], 'Fonts')
+            font_dest = os.path.join(fonts_dir, font_file)
+            
+            # Copy to Windows Fonts if not there
+            if not os.path.exists(font_dest):
+                try:
+                    shutil.copy2(font_file, font_dest)
+                    print(f"Installed font to: {font_dest}")
+                except PermissionError:
+                    print(f"Please install {font_file} manually: Right-click -> Install")
+            
+            # Try to load font by name to verify it works
+            try:
+                test_font = font.Font(family="Arcade Classic", size=12)
+                actual = test_font.actual()
+                actual_family = actual.get('family', 'Unknown')
+                if 'arcade' in actual_family.lower() or 'Arcade Classic' in actual_family:
+                    print(f"Font verified and working: {actual_family}")
+                else:
+                    print(f"Font may need manual installation. Current: {actual_family}")
+            except Exception as e:
+                print(f"Font verification: {e}")
+        except Exception as e:
+            print(f"Font installation check: {e}")
+except Exception as e:
+    pass
 
 # --- Frames (screens) ---
 home_frame = tk.Frame(root)
@@ -199,7 +340,7 @@ def go_to_narutogame(size=4):
     naruto_frame.lower()
     game_frame.lift()
     # Switch from intro to in-game music
-    play_music()
+    play_music("naruto")
     reset_game(size, theme=current_theme)
 
 
@@ -208,7 +349,7 @@ def go_to_opgame(size=4):
     current_theme = "op"
     onepiece_frame.lower()
     game_frame.lift()
-    play_music()
+    play_music("op")
     reset_game(size, theme=current_theme)
 
 
@@ -217,7 +358,7 @@ def go_to_slamgame(size=4):
     current_theme = "slam"
     slamdunk_frame.lower()
     game_frame.lift()
-    play_music()
+    play_music("slam")
     reset_game(size, theme=current_theme)
 
 
@@ -226,7 +367,7 @@ def go_to_dbgame(size=4):
     current_theme = "db"
     dragonball_frame.lower()
     game_frame.lift()
-    play_music()
+    play_music("db")
     reset_game(size, theme=current_theme)
 
 
@@ -235,14 +376,15 @@ def go_to_bleachgame(size=4):
     current_theme = "bleach"
     bleach_frame.lower()
     game_frame.lift()
-    play_music()
+    play_music("bleach")
     reset_game(size, theme=current_theme)
 
 
 # --- Game settings & globals ---
 card_size = (120, 120)
-time_limit = 60
-flip_limit = 20
+time_limit = 60  # Will be set dynamically based on grid size
+flip_limit = 20  # Will be set dynamically based on grid size
+points_per_match = 5  # Will be set dynamically based on grid size
 
 first_card = None
 second_card = None
@@ -293,29 +435,105 @@ flips_label.grid(row=0, column=1, padx=20)  # Gibutang sa row=0 col=1
 
 timer_label = tk.Label(
     game_frame,
-    text=f"Time: {time_limit}s",
+    text="Time: 60s",  # Initial display, will be updated when game starts
     font=(font_name, 18, "bold"),
     fg="white",
     bg=COLOR_PANEL_ACCENT,
 )  # Label para countdown timer
 timer_label.grid(row=0, column=2, padx=20)  # Gibutang sa row=0 col=2
 
-# === PAUSE OVERLAY (large text overlay center) ===
-pause_overlay = tk.Label(
-    game_frame,
-    text="The Game Paused",
-    font=(font_name, 48, "bold"),
-    fg="yellow",
+# === PAUSE MENU BOX ===
+pause_menu_box = tk.Frame(game_frame, bg="black", bd=4, relief="ridge")
+pause_menu_box.place(relx=0.5, rely=0.5, anchor="center", width=450, height=350)
+pause_menu_box.lower()
+
+pause_menu_title = tk.Label(
+    pause_menu_box,
+    text="Game Paused",
+    font=(font_name, 32, "bold"),
+    fg="#FF6B6B",
     bg="black",
-)  # Overlay text "paused"
-pause_overlay.place(relx=0.5, rely=0.5, anchor="center")  # Center overlay
-pause_overlay.lower()  # By default nakatago
+)
+pause_menu_title.pack(pady=(30, 20))
+
+pause_menu_buttons = tk.Frame(pause_menu_box, bg="black")
+pause_menu_buttons.pack(pady=20)
+
+def on_menu_resume():
+    """Resume the game from menu"""
+    global paused, timer_running, current_theme
+    paused = False
+    timer_running = True
+    pause_menu_box.lower()
+    play_music(current_theme)
+    update_timer()
+
+def on_menu_reset():
+    """Reset game from menu"""
+    pause_menu_box.lower()
+    reset_game(grid_size, theme=current_theme)
+
+def on_menu_back():
+    """Go back to themes from menu"""
+    pause_menu_box.lower()
+    back_to_themes()
+
+menu_resume_btn = ctk.CTkButton(
+    pause_menu_buttons,
+    text="Resume",
+    font=(font_name, 18, "bold"),
+    fg_color="#FF6B6B",
+    bg_color="black",
+    hover_color="#FF5252",
+    text_color="white",
+    width=180,
+    height=50,
+    corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
+    command=on_menu_resume,
+)
+menu_resume_btn.pack(pady=10)
+
+menu_reset_btn = ctk.CTkButton(
+    pause_menu_buttons,
+    text="Reset",
+    font=(font_name, 18, "bold"),
+    fg_color="#FF6B6B",
+    bg_color="black",
+    hover_color="#FF5252",
+    text_color="white",
+    width=180,
+    height=50,
+    corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
+    command=on_menu_reset,
+)
+menu_reset_btn.pack(pady=10)
+
+menu_back_btn = ctk.CTkButton(
+    pause_menu_buttons,
+    text="Back",
+    font=(font_name, 18, "bold"),
+    fg_color="#FF6B6B",
+    bg_color="black",
+    hover_color="#FF5252",
+    text_color="white",
+    width=180,
+    height=50,
+    corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
+    command=on_menu_back,
+)
+menu_back_btn.pack(pady=10)
 
 # === SIDE PANEL REMOVED - buttons now positioned directly on game frame ===
 
 # === BUTTON CONFIGURATION (shared style) ===
 btn_cfg = {
-    "font": ("Sukajan Brush", 14, "bold"),
+    "font": (font_name, 14, "bold"),
     "fg": COLOR_BTN_TEXT,
     "width": 12,
     "height": 2,
@@ -325,27 +543,15 @@ btn_cfg = {
 }
 
 
-# === PAUSE TOGGLE HANDLER ===
-def on_pause_toggle():
-    """Toggle between pause and resume state"""
+# === MENU ICON HANDLER ===
+def on_menu_click():
+    """Open pause menu and pause the game"""
     global paused, timer_running
-    if paused:  # If currently paused → resume
-        paused = False
-        timer_running = True
-        pause_btn.configure(
-            text="Pause", fg_color="#e67e22", hover_color="#f39c12"
-        )  # Change button look
-        pause_overlay.lower()  # Hide overlay
-        play_music()  # Resume bg music
-        update_timer()  # Resume timer
-    else:  # If currently running → pause
+    if not paused:  # Only pause if not already paused
         paused = True
         timer_running = False
-        pause_btn.configure(
-            text="Resume", fg_color="#e67e22", hover_color="#f39c12"
-        )  # Change button look
-        stop_music()  # Stop bg music
-        pause_overlay.lift()  # Show overlay
+        stop_music()
+        pause_menu_box.lift()
 
 
 # === BACK TO THEMES HANDLER ===
@@ -366,65 +572,30 @@ def back_to_themes():
     win_overlay.lower()  # Hide win overlay
     flip_overlay.lower()  # Hide flip overlay
     time_overlay.lower()  # Hide time overlay
-    pause_overlay.lower()  # Hide pause overlay
+    pause_menu_box.lower()  # Hide pause menu
     game_frame.lower()  # Hide game frame
     themes_frame.lift()  # Show themes menu
 
 
-# === CONTROL BUTTONS (positioned in same column) ===
-# Reset button - top of column
-reset_btn = ctk.CTkButton(
+# === MENU ICON BUTTON ===
+# Menu icon button - top left corner
+menu_icon_btn = ctk.CTkButton(
     game_frame,
-    text="Reset",
-    fg_color="#e74c3c",
+    text="☰",
+    fg_color="#FF6B6B",
     bg_color="transparent",
-    hover_color="#c0392b",
+    hover_color="#FF5252",
     text_color="white",
-    font=(font_name, 24, "bold"),
-    width=150,
+    font=(font_name, 32, "bold"),
+    width=60,
     height=60,
-    corner_radius=25,
-    border_width=0,
-    command=lambda: reset_game(grid_size, theme=current_theme),
+    corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
+    command=on_menu_click,
 )
-pywinstyles.set_opacity(reset_btn, color=COLOR_BG_PANEL)
-reset_btn.place(relx=0.95, rely=0.3, anchor="e")  # Right side, top
-
-# Back button - middle of column
-back_btn = ctk.CTkButton(
-    game_frame,
-    text="Back",
-    fg_color="#8e44ad",
-    bg_color="transparent",
-    hover_color="#9b59b6",
-    text_color="white",
-    font=(font_name, 24, "bold"),
-    width=150,
-    height=60,
-    corner_radius=25,
-    border_width=0,
-    command=back_to_themes,
-)
-pywinstyles.set_opacity(back_btn, color=COLOR_BG_PANEL)
-back_btn.place(relx=0.95, rely=0.5, anchor="e")  # Right side, middle
-
-# Pause button - bottom of column
-pause_btn = ctk.CTkButton(
-    game_frame,
-    text="Pause",
-    fg_color="#e67e22",
-    bg_color="transparent",
-    hover_color="#f39c12",
-    text_color="white",
-    font=(font_name, 24, "bold"),
-    width=150,
-    height=60,
-    corner_radius=25,
-    border_width=0,
-    command=on_pause_toggle,
-)
-pywinstyles.set_opacity(pause_btn, color=COLOR_BG_PANEL)
-pause_btn.place(relx=0.95, rely=0.7, anchor="e")  # Right side, bottom
+pywinstyles.set_opacity(menu_icon_btn, color=COLOR_BG_PANEL)
+menu_icon_btn.place(relx=0.9, rely=0.05, anchor="nw")  # Top left corner
 
 # === BOARD FRAME (main card grid area) ===
 board_frame = tk.Frame(game_frame, bg=COLOR_BG_PANEL)  # Board container for cards
@@ -487,14 +658,16 @@ win_btns.pack(side="bottom", pady=15)
 
 win_reset_btn = ctk.CTkButton(
     win_btns,
-    text="⟳ Reset",
+    text="Reset",
     font=(font_name, 14, "bold"),
-    fg_color="#e74c3c",
+    fg_color="#FF6B6B",
     bg_color="#000001",
-    hover_color="#c0392b",
+    hover_color="#FF5252",
     text_color="white",
     width=100,
     corner_radius=12,
+    border_width=2,
+    border_color="#FFFFFF",
     command=on_win_reset,
 )
 pywinstyles.set_opacity(win_reset_btn, color="#000001")
@@ -502,14 +675,16 @@ win_reset_btn.pack(side="left", padx=10)
 
 win_back_btn = ctk.CTkButton(
     win_btns,
-    text="← Back",
+    text="Back",
     font=(font_name, 14, "bold"),
-    fg_color="#e67e22",
+    fg_color="#FF6B6B",
     bg_color="#000001",
-    hover_color="#d35400",
+    hover_color="#FF5252",
     text_color="white",
     width=100,
     corner_radius=12,
+    border_width=2,
+    border_color="#FFFFFF",
     command=on_win_back,
 )
 pywinstyles.set_opacity(win_back_btn, color="#000001")
@@ -535,12 +710,14 @@ flip_reset_btn = ctk.CTkButton(
     flip_overlay,
     text="⟳ Reset",
     font=(font_name, 14, "bold"),
-    fg_color="#e74c3c",
+    fg_color="#FF6B6B",
     bg_color="#000001",
-    hover_color="#c0392b",
+    hover_color="#FF5252",
     text_color="white",
     width=100,
     corner_radius=12,
+    border_width=2,
+    border_color="#FFFFFF",
     command=on_flip_reset,
 )
 pywinstyles.set_opacity(flip_reset_btn, color="#000001")
@@ -548,14 +725,16 @@ flip_reset_btn.pack(side="left", padx=10)
 
 flip_back_btn = ctk.CTkButton(
     flip_overlay,
-    text="← Back",
+    text="Back",
     font=(font_name, 14, "bold"),
-    fg_color="#e67e22",
+    fg_color="#FF6B6B",
     bg_color="#000001",
-    hover_color="#d35400",
+    hover_color="#FF5252",
     text_color="white",
     width=100,
     corner_radius=12,
+    border_width=2,
+    border_color="#FFFFFF",
     command=on_flip_back,
 )
 pywinstyles.set_opacity(flip_back_btn, color="#000001")
@@ -577,12 +756,14 @@ time_reset_btn = ctk.CTkButton(
     time_overlay,
     text="⟳ Reset",
     font=(font_name, 14, "bold"),
-    fg_color="#e74c3c",
+    fg_color="#FF6B6B",
     bg_color="#000001",
-    hover_color="#c0392b",
+    hover_color="#FF5252",
     text_color="white",
     width=100,
     corner_radius=12,
+    border_width=2,
+    border_color="#FFFFFF",
     command=on_time_reset,
 )
 pywinstyles.set_opacity(time_reset_btn, color="#000001")
@@ -590,21 +771,34 @@ time_reset_btn.pack(side="left", padx=10)
 
 time_back_btn = ctk.CTkButton(
     time_overlay,
-    text="← Back",
+    text="Back",
     font=(font_name, 14, "bold"),
-    fg_color="#e67e22",
+    fg_color="#FF6B6B",
     bg_color="#000001",
-    hover_color="#d35400",
+    hover_color="#FF5252",
     text_color="white",
     width=100,
     corner_radius=12,
+    border_width=2,
+    border_color="#FFFFFF",
     command=on_time_back,
 )
 pywinstyles.set_opacity(time_back_btn, color="#000001")
 time_back_btn.pack(side="right", padx=10)
 
-# --- Placeholder back image ---
-back_image = ImageTk.PhotoImage(Image.new("RGB", (120, 120), color="gray"))
+# --- Card back/cover image ---
+def load_back_image(size=(120, 120)):
+    """Load card back image, or create gray placeholder if not found"""
+    if os.path.exists("narutocover.jpeg"):
+        try:
+            img = Image.open("narutocover.jpeg").resize(size, Image.Resampling.LANCZOS)
+            return ImageTk.PhotoImage(img)
+        except Exception:
+            pass
+    # Fallback to gray placeholder if image not found
+    return ImageTk.PhotoImage(Image.new("RGB", size, color="gray"))
+
+back_image = load_back_image()
 
 # --- Theme image paths ---
 naruto_paths_4x4 = [f"naruto{i}.png" for i in range(1, 9)]
@@ -655,7 +849,16 @@ def update_timer():
     global time_left, timer_id, timer_running
     if timer_running and not paused:
         time_left -= 1
-        timer_label.config(text=f"Time: {time_left}s")
+        # Format time display: show minutes and seconds for times >= 60 seconds
+        if time_left >= 60:
+            minutes = time_left // 60
+            seconds = time_left % 60
+            if seconds > 0:
+                timer_label.config(text=f"Time: {minutes}m {seconds}s")
+            else:
+                timer_label.config(text=f"Time: {minutes}m")
+        else:
+            timer_label.config(text=f"Time: {time_left}s")
         if time_left <= 0:
             game_over("Time's up! You lose.")
         else:
@@ -708,8 +911,8 @@ def show_hint():
         buttons[card1_idx].config(image=card_images[card1_idx])
         buttons[card2_idx].config(image=card_images[card2_idx])
         
-        # Schedule hiding the hint after 2 seconds
-        hint_timer = root.after(2000, hide_hint)
+        # Schedule hiding the hint after a very quick flash (150ms - speed of light!)
+        hint_timer = root.after(150, hide_hint)
 
 
 def hide_hint():
@@ -751,10 +954,10 @@ def on_card_click(idx):
 
 
 def check_match():
-    global first_card, second_card, score, flips, consecutive_failed_flips
+    global first_card, second_card, score, flips, consecutive_failed_flips, points_per_match
     if card_images[first_card] == card_images[second_card]:
         flipped_cards.extend([first_card, second_card])
-        score += 5
+        score += points_per_match
         score_label.config(text=f"Score: {score}")
         consecutive_failed_flips = 0  # Reset failed flips counter on successful match
     else:
@@ -811,6 +1014,7 @@ def reset_game(size=4, theme="naruto"):
     global card_images, first_card, second_card, flipped_cards
     global score, flips, time_left, timer_running, buttons, grid_size, back_image, paused
     global consecutive_failed_flips, hint_shown, hint_timer
+    global time_limit, flip_limit, points_per_match
 
     cancel_timer()
     cancel_hint_timer()
@@ -818,13 +1022,29 @@ def reset_game(size=4, theme="naruto"):
         clap_sound.stop()
     if lose_sound:
         lose_sound.stop()
-    play_music()
+    play_music(theme)
 
     grid_size = size
+    
+    # Set game settings based on grid size
+    if size == 4:
+        time_limit = 60  # 1 minute
+        flip_limit = 20
+        points_per_match = 5
+    elif size == 6:
+        time_limit = 90  # 1 minute 30 seconds
+        flip_limit = 40
+        points_per_match = 10
+    elif size == 8:
+        time_limit = 120  # 2 minutes
+        flip_limit = 50
+        points_per_match = 15
+    
     px = (120, 120) if size == 4 else (80, 80) if size == 6 else (60, 60)
     needed = 8 if size == 4 else 18 if size == 6 else 32
 
-    back_image = ImageTk.PhotoImage(Image.new("RGB", px, color="gray"))
+    # Load card back image with proper size
+    back_image = load_back_image(px)
 
     for w in board_frame.winfo_children():
         w.destroy()
@@ -860,12 +1080,20 @@ def reset_game(size=4, theme="naruto"):
 
     score_label.config(text="Score: 0")
     flips_label.config(text=f"Flips: 0/{flip_limit}")
-    timer_label.config(text=f"Time: {time_limit}s")
+    # Format time display: show minutes and seconds for times >= 60 seconds
+    if time_limit >= 60:
+        minutes = time_limit // 60
+        seconds = time_limit % 60
+        if seconds > 0:
+            timer_label.config(text=f"Time: {minutes}m {seconds}s")
+        else:
+            timer_label.config(text=f"Time: {minutes}m")
+    else:
+        timer_label.config(text=f"Time: {time_limit}s")
     result_label.config(text="")
     result_label.lower()
     win_overlay.lower()
-    pause_overlay.lower()
-    pause_btn.configure(text="Pause", fg_color="#e67e22")
+    pause_menu_box.lower()
     update_timer()
 
 
@@ -889,13 +1117,15 @@ start_btn = ctk.CTkButton(
     home_frame,
     text="START",
     font=(font_name, 24, "bold"),
-    fg_color="#FF7F7F",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#28a75a",
+    hover_color="#FF5252",
     width=200,
     height=50,
     corner_radius=20,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to(themes_frame),
 )
 pywinstyles.set_opacity(start_btn, color="#000001")
@@ -905,13 +1135,15 @@ howto_btn = ctk.CTkButton(
     home_frame,
     text="HOW TO PLAY",
     font=(font_name, 24, "bold"),
-    fg_color="#FF7F7F",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#28a75a",
+    hover_color="#FF5252",
     width=200,
     height=50,
     corner_radius=20,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to(howto_frame),
 )
 pywinstyles.set_opacity(howto_btn, color="#000001")
@@ -921,13 +1153,15 @@ exit_btn = ctk.CTkButton(
     home_frame,
     text="EXIT",
     font=(font_name, 24, "bold"),
-    fg_color="#FF7F7F",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#28a75a",
+    hover_color="#FF5252",
     width=200,
     height=50,
     corner_radius=20,
+    border_width=2,
+    border_color="#FFFFFF",
     command=exit_app,
 )
 pywinstyles.set_opacity(exit_btn, color="#000001")
@@ -936,15 +1170,17 @@ exit_btn.place(relx=0.5, y=580, anchor="center")
 # Mute/Unmute button
 mute_btn = ctk.CTkButton(
     home_frame,
-    text="🔇 Mute",
+    text="Mute",
     font=(font_name, 24, "bold"),
-    fg_color="#FF7F7F",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#28a75a",
+    hover_color="#FF5252",
     width=200,
     height=50,
     corner_radius=20,
+    border_width=2,
+    border_color="#FFFFFF",
     command=toggle_mute,
 )
 pywinstyles.set_opacity(mute_btn, color="#000001")
@@ -956,13 +1192,15 @@ def make_theme_btn(parent, text, y, cmd):
         parent,
         text=text,
         font=(font_name, 19, "bold"),
-        fg_color="#FF7F7F",
+        fg_color="#FF6B6B",
         bg_color="#000001",
         text_color="White",
-        hover_color="darkorange1",
+        hover_color="#FF5252",
         width=13 * 10,
         height=3 * 20,
         corner_radius=18,
+        border_width=2,
+        border_color="#FFFFFF",
         command=cmd,
     )
     pywinstyles.set_opacity(b, color="#000001")
@@ -973,23 +1211,23 @@ def make_theme_btn(parent, text, y, cmd):
 naruto_theme_btn = make_theme_btn(
     themes_frame, "Naruto", 180, lambda: go_to_naruto_with_auto_transitions()
 )
-naruto_theme_btn.place(x=130, y=330)
+naruto_theme_btn.place(x=130, y=490)
 onepiece_theme_btn = make_theme_btn(
     themes_frame, "One Piece", 260, lambda: go_to(onepiece_frame)
 )
-onepiece_theme_btn.place(x=980, y=330)
+onepiece_theme_btn.place(x=1000, y=490)
 slamdunk_theme_btn = make_theme_btn(
     themes_frame, "Slam Dunk", 340, lambda: go_to(slamdunk_frame)
 )
-slamdunk_theme_btn.place(x=400, y=330)
+slamdunk_theme_btn.place(x=420, y=490)
 db_theme_btn = make_theme_btn(
     themes_frame, "Dragon Ball", 420, lambda: go_to(dragonball_frame)
 )
-db_theme_btn.place(x=1250, y=330)
+db_theme_btn.place(x=1275, y=490)
 bleach_theme_btn = make_theme_btn(
     themes_frame, "Bleach", 500, lambda: go_to(bleach_frame)
 )
-bleach_theme_btn.place(x=690, y=330)
+bleach_theme_btn.place(x=700, y=490)
 
 # --- HOW TO PLAY FRAME ---
 howto_frame = tk.Frame(root, bg="#0d1117")  # GitHub dark background
@@ -1005,7 +1243,7 @@ main_container.place(relx=0.5, rely=0.5, anchor="center", width=850, height=750)
 title_label = tk.Label(
     main_container,
     text="HOW TO PLAY",
-    font=("Impact", 32, "bold"),
+    font=(font_name, 32, "bold"),
     fg="#58a6ff",  # GitHub blue
     bg="#161b22",
 )
@@ -1158,15 +1396,17 @@ gameover_text.pack(anchor="w", padx=20, pady=(0, 15))
 # --- BACK BUTTON (top left corner) ---
 howto_back_btn = ctk.CTkButton(
     howto_frame,
-    text="← Back",
+    text="Back",
     font=(font_name, 16, "bold"),
-    fg_color="#f85149",  # GitHub red
+    fg_color="#FF6B6B",
     bg_color="#0d1117",
     text_color="white",
-    hover_color="#da3633",
+    hover_color="#FF5252",
     width=120,
     height=45,
     corner_radius=20,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to(home_frame),
 )
 pywinstyles.set_opacity(howto_back_btn, color="#0d1117")
@@ -1191,6 +1431,8 @@ def make_tile_btn(parent, text, x, y, cmd, bg, abg):
         width=100,
         height=50,
         corner_radius=15,
+        border_width=2,
+        border_color="#FFFFFF",
         command=cmd,
     )
     pywinstyles.set_opacity(btn, color="#000001")
@@ -1210,6 +1452,8 @@ def make_back_btn(parent, text, cmd, bg, abg):
         width=140,
         height=50,
         corner_radius=15,
+        border_width=2,
+        border_color="#FFFFFF",
         command=cmd,
     )
     pywinstyles.set_opacity(btn, color="#000001")
@@ -1227,13 +1471,15 @@ naruto_4x4_btn = ctk.CTkButton(
     naruto_frame,
     text="4x4",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_narutogame(4),
 )
 pywinstyles.set_opacity(naruto_4x4_btn, color="#000001")
@@ -1255,13 +1501,15 @@ naruto_6x6_btn = ctk.CTkButton(
     naruto_frame,
     text="6x6",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_narutogame(6),
 )
 pywinstyles.set_opacity(naruto_6x6_btn, color="#000001")
@@ -1283,13 +1531,15 @@ naruto_8x8_btn = ctk.CTkButton(
     naruto_frame,
     text="8x8",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_narutogame(8),
 )
 pywinstyles.set_opacity(naruto_8x8_btn, color="#000001")
@@ -1306,7 +1556,7 @@ def on_8x8_leave(event):
 
 naruto_8x8_btn.bind("<Enter>", on_8x8_enter)
 naruto_8x8_btn.bind("<Leave>", on_8x8_leave)
-make_back_btn(naruto_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626")
+make_back_btn(naruto_frame, "Back", lambda: go_to(themes_frame), "#FF6B6B", "#FF5252")
 
 # GIF frame with hover effects and smooth transitions
 naruto_gif_images = []
@@ -1570,13 +1820,15 @@ onepiece_4x4_btn = ctk.CTkButton(
     onepiece_frame,
     text="4x4",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_opgame(4),
 )
 pywinstyles.set_opacity(onepiece_4x4_btn, color="#000001")
@@ -1599,13 +1851,15 @@ onepiece_6x6_btn = ctk.CTkButton(
     onepiece_frame,
     text="6x6",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_opgame(6),
 )
 pywinstyles.set_opacity(onepiece_6x6_btn, color="#000001")
@@ -1628,13 +1882,15 @@ onepiece_8x8_btn = ctk.CTkButton(
     onepiece_frame,
     text="8x8",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_opgame(8),
 )
 pywinstyles.set_opacity(onepiece_8x8_btn, color="#000001")
@@ -1652,7 +1908,7 @@ def on_op_8x8_leave(event):
 onepiece_8x8_btn.bind("<Enter>", on_op_8x8_enter)
 onepiece_8x8_btn.bind("<Leave>", on_op_8x8_leave)
 
-make_back_btn(onepiece_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626")
+make_back_btn(onepiece_frame, "Back", lambda: go_to(themes_frame), "#FF6B6B", "#FF5252")
 
 # Slam Dunk choose tiles - copy naruto layout
 # Add GIF frame to the right side of slamdunk_frame (landscape orientation)
@@ -1664,13 +1920,15 @@ slamdunk_4x4_btn = ctk.CTkButton(
     slamdunk_frame,
     text="4x4",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_slamgame(4),
 )
 pywinstyles.set_opacity(slamdunk_4x4_btn, color="#000001")
@@ -1693,13 +1951,15 @@ slamdunk_6x6_btn = ctk.CTkButton(
     slamdunk_frame,
     text="6x6",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_slamgame(6),
 )
 pywinstyles.set_opacity(slamdunk_6x6_btn, color="#000001")
@@ -1722,13 +1982,15 @@ slamdunk_8x8_btn = ctk.CTkButton(
     slamdunk_frame,
     text="8x8",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_slamgame(8),
 )
 pywinstyles.set_opacity(slamdunk_8x8_btn, color="#000001")
@@ -1746,7 +2008,7 @@ def on_slam_8x8_leave(event):
 slamdunk_8x8_btn.bind("<Enter>", on_slam_8x8_enter)
 slamdunk_8x8_btn.bind("<Leave>", on_slam_8x8_leave)
 
-make_back_btn(slamdunk_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626")
+make_back_btn(slamdunk_frame, "Back", lambda: go_to(themes_frame), "#FF6B6B", "#FF5252")
 
 # Dragon Ball choose tiles - copy naruto layout
 # Add GIF frame to the right side of dragonball_frame (landscape orientation)
@@ -1758,13 +2020,15 @@ dragonball_4x4_btn = ctk.CTkButton(
     dragonball_frame,
     text="4x4",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_dbgame(4),
 )
 pywinstyles.set_opacity(dragonball_4x4_btn, color="#000001")
@@ -1787,13 +2051,15 @@ dragonball_6x6_btn = ctk.CTkButton(
     dragonball_frame,
     text="6x6",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_dbgame(6),
 )
 pywinstyles.set_opacity(dragonball_6x6_btn, color="#000001")
@@ -1816,13 +2082,15 @@ dragonball_8x8_btn = ctk.CTkButton(
     dragonball_frame,
     text="8x8",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_dbgame(8),
 )
 pywinstyles.set_opacity(dragonball_8x8_btn, color="#000001")
@@ -1840,7 +2108,7 @@ def on_db_8x8_leave(event):
 dragonball_8x8_btn.bind("<Enter>", on_db_8x8_enter)
 dragonball_8x8_btn.bind("<Leave>", on_db_8x8_leave)
 
-make_back_btn(dragonball_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626")
+make_back_btn(dragonball_frame, "Back", lambda: go_to(themes_frame), "#FF6B6B", "#FF5252")
 
 # Bleach choose tiles - copy naruto layout
 # Add GIF frame to the right side of bleach_frame (landscape orientation)
@@ -1852,13 +2120,15 @@ bleach_4x4_btn = ctk.CTkButton(
     bleach_frame,
     text="4x4",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_bleachgame(4),
 )
 pywinstyles.set_opacity(bleach_4x4_btn, color="#000001")
@@ -1881,13 +2151,15 @@ bleach_6x6_btn = ctk.CTkButton(
     bleach_frame,
     text="6x6",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_bleachgame(6),
 )
 pywinstyles.set_opacity(bleach_6x6_btn, color="#000001")
@@ -1910,13 +2182,15 @@ bleach_8x8_btn = ctk.CTkButton(
     bleach_frame,
     text="8x8",
     font=(font_name, 18, "bold"),
-    fg_color="#6366f1",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#4f46e5",
+    hover_color="#FF5252",
     width=100,
     height=50,
     corner_radius=15,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to_bleachgame(8),
 )
 pywinstyles.set_opacity(bleach_8x8_btn, color="#000001")
@@ -1934,20 +2208,22 @@ def on_bleach_8x8_leave(event):
 bleach_8x8_btn.bind("<Enter>", on_bleach_8x8_enter)
 bleach_8x8_btn.bind("<Leave>", on_bleach_8x8_leave)
 
-make_back_btn(bleach_frame, "← Back", lambda: go_to(themes_frame), "#ef4444", "#dc2626")
+make_back_btn(bleach_frame, "Back", lambda: go_to(themes_frame), "#FF6B6B", "#FF5252")
 
 # --- Ensure theme selection also has a visible Back to Themes button on each theme main (optional) ---
 themes_home_btn = ctk.CTkButton(
     themes_frame,
     text="Home",
     font=(font_name, 14, "bold"),
-    fg_color="#FF7F7F",
+    fg_color="#FF6B6B",
     bg_color="#000001",
     text_color="white",
-    hover_color="#ff6060",
+    hover_color="#FF5252",
     corner_radius=12,
     width=80,
     height=35,
+    border_width=2,
+    border_color="#FFFFFF",
     command=lambda: go_to(home_frame),
 )
 pywinstyles.set_opacity(themes_home_btn, color="#000001")

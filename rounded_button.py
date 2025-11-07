@@ -1,4 +1,28 @@
 import tkinter as tk
+import os
+
+def get_arcade_font():
+    """Get arcade-style font name - just return the font name string"""
+    # Check if font file exists
+    font_files = ["Arcade Classic.ttf", "ARCADECLASSIC.TTF", "ArcadeClassic.ttf"]
+    
+    for font_file in font_files:
+        if os.path.exists(font_file):
+            # Font file exists, return the expected font family name
+            return "Arcade Classic"
+    
+    # Try system-installed arcade fonts (just return the name, don't test)
+    arcade_fonts = [
+        "Arcade Classic", "ArcadeClassic", "ARCADECLASSIC",
+        "Press Start 2P", "PressStart2P",
+        "Arcade", "Arcade Interlaced", "Arcade Rounded",
+        "Courier New", "Lucida Console", "Consolas"
+    ]
+    
+    # Return the first one as default (will fallback if not available)
+    return arcade_fonts[0] if arcade_fonts else "Courier New"
+
+_arcade_font_name = get_arcade_font()
 
 def create_rounded_button(parent, x, y, width, height, radius, bg, text, command):
     canvas = tk.Canvas(parent, width=width, height=height, highlightthickness=0, bg=parent["bg"])
@@ -24,8 +48,8 @@ def create_rounded_button(parent, x, y, width, height, radius, bg, text, command
     # Draw rounded rectangle (button background)
     button_shape = round_rect(5, 5, width-5, height-5, radius, fill=bg, outline="")
 
-    # Add text
-    button_text = canvas.create_text(width/2, height/2, text=text, fill="white", font=("Arial", 20, "bold"))
+    # Add text with arcade font
+    button_text = canvas.create_text(width/2, height/2, text=text, fill="white", font=(_arcade_font_name, 20, "bold"))
 
     # ✅ Bind click to both shape & text
     def on_click(event=None):
