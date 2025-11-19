@@ -5,6 +5,11 @@ COLOR_BG_PANEL = "#000000"
 COLOR_PANEL_ACCENT = "#34495e"
 COLOR_BTN_TEXT = "white"
 
+# Panel border colors
+COLOR_SCORE_BORDER = "white"  # Green for score
+COLOR_FLIPS_BORDER = "white"  # Gold for flips
+COLOR_TIME_BORDER = "white"   # Blue for time
+
 # Font
 FONT_NAMES = "Tahoma"
 

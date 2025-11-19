@@ -202,25 +202,25 @@ naruto_theme_btn.place(x=130, y=490)
 
 onepiece_theme_btn = make_theme_btn(
     themes_frame, "One Piece", 260,
-    lambda: go_to(onepiece_frame, home_frame), FONT_NAMES
+    lambda: go_to_onepiece_with_auto_transitions(), FONT_NAMES
 )
 onepiece_theme_btn.place(x=1030, y=490)
 
 slamdunk_theme_btn = make_theme_btn(
     themes_frame, "Slam Dunk", 340,
-    lambda: go_to(slamdunk_frame, home_frame), FONT_NAMES
+    lambda: go_to_slamdunk_with_auto_transitions(), FONT_NAMES
 )
 slamdunk_theme_btn.place(x=420, y=490)
 
 db_theme_btn = make_theme_btn(
     themes_frame, "Dragon Ball", 420,
-    lambda: go_to(dragonball_frame, home_frame), FONT_NAMES
+    lambda: go_to_dragonball_with_auto_transitions(), FONT_NAMES
 )
 db_theme_btn.place(x=1350, y=490)
 
 bleach_theme_btn = make_theme_btn(
     themes_frame, "Bleach", 500,
-    lambda: go_to(bleach_frame, home_frame), FONT_NAMES
+    lambda: go_to_bleach_with_auto_transitions(), FONT_NAMES
 )
 bleach_theme_btn.place(x=720, y=490)
 
@@ -249,24 +249,52 @@ pywinstyles.set_opacity(themes_home_btn, color="#000001")
 themes_home_btn.place(relx=0.02, rely=0.02, anchor="nw")
 
 # === HOW TO PLAY FRAME ===
-main_container = tk.Frame(howto_frame, bg="black", relief="raised", bd=1)
+main_container = tk.Frame(howto_frame, bg="black", relief="raised", bd=10)
 main_container.place(relx=0.5, rely=0.5, anchor="center", width=1090, height=750)
 
 title_label = tk.Label(
-    main_container, text="HOW TO PLAY", font=(FONT_NAMES, 15, "bold"),
+    main_container, text="------------------------------------------ HOW TO PLAY -----------------------------------------", font=(FONT_NAMES, 15, "bold"),
     fg="white", bg="black"
 )
 title_label.pack(pady=(30, 15))
 
-instruction_frame = tk.Frame(main_container, bg="black")
-instruction_frame.pack(fill="both", expand=False, padx=35, pady=15)
+# Create a canvas with scrollbar for scrollable content
+canvas = tk.Canvas(main_container, bg="black", highlightthickness=0)
+scrollbar = tk.Scrollbar(main_container, orient="vertical", command=canvas.yview)
+instruction_frame = tk.Frame(canvas, bg="black")
+
+# Store reference to the canvas window
+canvas_window = canvas.create_window((0, 0), window=instruction_frame, anchor="nw")
+
+# Update scroll region and canvas window width
+def update_scroll_region(event):
+    canvas.configure(scrollregion=canvas.bbox("all"))
+    # Update canvas window width to match canvas width
+    canvas_width = canvas.winfo_width()
+    if canvas_width > 1:  # Only update if canvas has been rendered
+        canvas.itemconfig(canvas_window, width=canvas_width)
+
+instruction_frame.bind("<Configure>", update_scroll_region)
+canvas.bind("<Configure>", lambda e: canvas.itemconfig(canvas_window, width=e.width))
+
+canvas.configure(yscrollcommand=scrollbar.set)
+
+# Enable mouse wheel scrolling
+def on_mousewheel(event):
+    canvas.yview_scroll(int(-1 * (event.delta / 120)), "units")
+
+canvas.bind_all("<MouseWheel>", on_mousewheel)
+
+canvas.pack(side="left", fill="both", expand=True, padx=(35, 0), pady=15)
+scrollbar.pack(side="right", fill="y", padx=(0, 35), pady=15)
 
 # Theme Selection
 theme_section = tk.Frame(instruction_frame, bg="black", relief="raised", bd=0)
 theme_section.pack(fill="x", pady=4)
 
 theme_title = tk.Label(
-    theme_section, text="🎮 Choose a Theme", font=(FONT_NAMES, 12, "bold"),
+    theme_section, 
+    text="🎮 Choose a Theme", font=(FONT_NAMES, 12, "bold"),
     fg="White", bg="black"
 )
 theme_title.pack(anchor="w", padx=20, pady=(0, 0))
@@ -389,13 +417,13 @@ pywinstyles.set_opacity(howto_back_btn, color="#0d1117")
 howto_back_btn.place(x=20, y=20)
 
 # === NARUTO FRAME UI ===
-naruto_gif_frame = tk.Frame(naruto_frame, bg="#1A1A2E", relief="raised", bd=5)
+naruto_gif_frame = tk.Frame(naruto_frame, bg="white", relief="raised", bd=5)
 naruto_gif_frame.place(x=400, y=200, width=715, height=376)
 
 
 def go_to_naruto_with_auto_transitions():
     go_to(naruto_frame, home_frame)
-    start_auto_transitions(naruto_gif_frame)
+    start_auto_transitions(naruto_gif_frame, "naruto", "#1A1A2E")
 
 
 naruto_4x4_btn = make_tile_btn(
@@ -413,7 +441,7 @@ def on_4x4_enter(event):
 
 def on_4x4_leave(event):
     clear_gif()
-    start_auto_transitions(naruto_gif_frame)
+    start_auto_transitions(naruto_gif_frame, "naruto", "#1A1A2E")
 
 
 naruto_4x4_btn.bind("<Enter>", on_4x4_enter)
@@ -434,7 +462,7 @@ def on_6x6_enter(event):
 
 def on_6x6_leave(event):
     clear_gif()
-    start_auto_transitions(naruto_gif_frame)
+    start_auto_transitions(naruto_gif_frame, "naruto", "#1A1A2E")
 
 
 naruto_6x6_btn.bind("<Enter>", on_6x6_enter)
@@ -455,7 +483,7 @@ def on_8x8_enter(event):
 
 def on_8x8_leave(event):
     clear_gif()
-    start_auto_transitions(naruto_gif_frame)
+    start_auto_transitions(naruto_gif_frame, "naruto", "#1A1A2E")
 
 
 naruto_8x8_btn.bind("<Enter>", on_8x8_enter)
@@ -467,8 +495,13 @@ make_back_btn(
 )
 
 # === ONE PIECE FRAME UI ===
-onepiece_gif_frame = tk.Frame(onepiece_frame, bg="#F8F4EC", relief="raised", bd=3)
-onepiece_gif_frame.place(x=400, y=200, width=700, height=400)
+onepiece_gif_frame = tk.Frame(onepiece_frame, bg="white", relief="raised", bd=3)
+onepiece_gif_frame.place(x=400, y=200, width=715, height=376)
+
+
+def go_to_onepiece_with_auto_transitions():
+    go_to(onepiece_frame, home_frame)
+    start_auto_transitions(onepiece_gif_frame, "op", "#F8F4EC")
 
 onepiece_4x4_btn = make_tile_btn(
     onepiece_frame, "4x4", 150, 300,
@@ -485,7 +518,7 @@ def on_op_4x4_enter(event):
 
 def on_op_4x4_leave(event):
     clear_gif()
-    start_auto_transitions(onepiece_gif_frame)
+    start_auto_transitions(onepiece_gif_frame, "op", "#F8F4EC")
 
 
 onepiece_4x4_btn.bind("<Enter>", on_op_4x4_enter)
@@ -506,7 +539,7 @@ def on_op_6x6_enter(event):
 
 def on_op_6x6_leave(event):
     clear_gif()
-    start_auto_transitions(onepiece_gif_frame)
+    start_auto_transitions(onepiece_gif_frame, "op", "#F8F4EC")
 
 
 onepiece_6x6_btn.bind("<Enter>", on_op_6x6_enter)
@@ -527,7 +560,7 @@ def on_op_8x8_enter(event):
 
 def on_op_8x8_leave(event):
     clear_gif()
-    start_auto_transitions(onepiece_gif_frame)
+    start_auto_transitions(onepiece_gif_frame, "op", "#F8F4EC")
 
 
 onepiece_8x8_btn.bind("<Enter>", on_op_8x8_enter)
@@ -539,8 +572,13 @@ make_back_btn(
 )
 
 # === SLAM DUNK FRAME UI ===
-slamdunk_gif_frame = tk.Frame(slamdunk_frame, bg="#1A1A2E", relief="raised", bd=3)
-slamdunk_gif_frame.place(x=400, y=200, width=800, height=400)
+slamdunk_gif_frame = tk.Frame(slamdunk_frame, bg="white", relief="raised", bd=3)
+slamdunk_gif_frame.place(x=400, y=200, width=715, height=376)
+
+
+def go_to_slamdunk_with_auto_transitions():
+    go_to(slamdunk_frame, home_frame)
+    start_auto_transitions(slamdunk_gif_frame, "slamdunk", "#1A1A2E")
 
 slamdunk_4x4_btn = make_tile_btn(
     slamdunk_frame, "4x4", 150, 300,
@@ -557,7 +595,7 @@ def on_slam_4x4_enter(event):
 
 def on_slam_4x4_leave(event):
     clear_gif()
-    start_auto_transitions(slamdunk_gif_frame)
+    start_auto_transitions(slamdunk_gif_frame, "slamdunk", "#1A1A2E")
 
 
 slamdunk_4x4_btn.bind("<Enter>", on_slam_4x4_enter)
@@ -578,7 +616,7 @@ def on_slam_6x6_enter(event):
 
 def on_slam_6x6_leave(event):
     clear_gif()
-    start_auto_transitions(slamdunk_gif_frame)
+    start_auto_transitions(slamdunk_gif_frame, "slamdunk", "#1A1A2E")
 
 
 slamdunk_6x6_btn.bind("<Enter>", on_slam_6x6_enter)
@@ -599,7 +637,7 @@ def on_slam_8x8_enter(event):
 
 def on_slam_8x8_leave(event):
     clear_gif()
-    start_auto_transitions(slamdunk_gif_frame)
+    start_auto_transitions(slamdunk_gif_frame, "slamdunk", "#1A1A2E")
 
 
 slamdunk_8x8_btn.bind("<Enter>", on_slam_8x8_enter)
@@ -611,8 +649,13 @@ make_back_btn(
 )
 
 # === DRAGON BALL FRAME UI ===
-dragonball_gif_frame = tk.Frame(dragonball_frame, bg="#1A1A2E", relief="raised", bd=3)
-dragonball_gif_frame.place(x=400, y=200, width=800, height=400)
+dragonball_gif_frame = tk.Frame(dragonball_frame, bg="white", relief="raised", bd=3)
+dragonball_gif_frame.place(x=400, y=200, width=715, height=376)
+
+
+def go_to_dragonball_with_auto_transitions():
+    go_to(dragonball_frame, home_frame)
+    start_auto_transitions(dragonball_gif_frame, "db", "#1A1A2E")
 
 dragonball_4x4_btn = make_tile_btn(
     dragonball_frame, "4x4", 150, 300,
@@ -629,7 +672,7 @@ def on_db_4x4_enter(event):
 
 def on_db_4x4_leave(event):
     clear_gif()
-    start_auto_transitions(dragonball_gif_frame)
+    start_auto_transitions(dragonball_gif_frame, "db", "#1A1A2E")
 
 
 dragonball_4x4_btn.bind("<Enter>", on_db_4x4_enter)
@@ -650,7 +693,7 @@ def on_db_6x6_enter(event):
 
 def on_db_6x6_leave(event):
     clear_gif()
-    start_auto_transitions(dragonball_gif_frame)
+    start_auto_transitions(dragonball_gif_frame, "db", "#1A1A2E")
 
 
 dragonball_6x6_btn.bind("<Enter>", on_db_6x6_enter)
@@ -671,7 +714,7 @@ def on_db_8x8_enter(event):
 
 def on_db_8x8_leave(event):
     clear_gif()
-    start_auto_transitions(dragonball_gif_frame)
+    start_auto_transitions(dragonball_gif_frame, "db", "#1A1A2E")
 
 
 dragonball_8x8_btn.bind("<Enter>", on_db_8x8_enter)
@@ -683,8 +726,13 @@ make_back_btn(
 )
 
 # === BLEACH FRAME UI ===
-bleach_gif_frame = tk.Frame(bleach_frame, bg="#1A1A2E", relief="raised", bd=3)
-bleach_gif_frame.place(x=400, y=200, width=800, height=400)
+bleach_gif_frame = tk.Frame(bleach_frame, bg="white", relief="raised", bd=3)
+bleach_gif_frame.place(x=400, y=200, width=715, height=376)
+
+
+def go_to_bleach_with_auto_transitions():
+    go_to(bleach_frame, home_frame)
+    start_auto_transitions(bleach_gif_frame, "bleach", "#1A1A2E")
 
 bleach_4x4_btn = make_tile_btn(
     bleach_frame, "4x4", 150, 300,
@@ -701,7 +749,7 @@ def on_bleach_4x4_enter(event):
 
 def on_bleach_4x4_leave(event):
     clear_gif()
-    start_auto_transitions(bleach_gif_frame)
+    start_auto_transitions(bleach_gif_frame, "bleach", "#1A1A2E")
 
 
 bleach_4x4_btn.bind("<Enter>", on_bleach_4x4_enter)
@@ -722,7 +770,7 @@ def on_bleach_6x6_enter(event):
 
 def on_bleach_6x6_leave(event):
     clear_gif()
-    start_auto_transitions(bleach_gif_frame)
+    start_auto_transitions(bleach_gif_frame, "bleach", "#1A1A2E")
 
 
 bleach_6x6_btn.bind("<Enter>", on_bleach_6x6_enter)
@@ -743,7 +791,7 @@ def on_bleach_8x8_enter(event):
 
 def on_bleach_8x8_leave(event):
     clear_gif()
-    start_auto_transitions(bleach_gif_frame)
+    start_auto_transitions(bleach_gif_frame, "bleach", "#1A1A2E")
 
 
 bleach_8x8_btn.bind("<Enter>", on_bleach_8x8_enter)

@@ -2,7 +2,7 @@
 import tkinter as tk
 import customtkinter as ctk
 import pywinstyles
-from constants import COLOR_BG_PANEL, COLOR_PANEL_ACCENT
+from constants import COLOR_BG_PANEL, COLOR_PANEL_ACCENT, COLOR_SCORE_BORDER, COLOR_FLIPS_BORDER, COLOR_TIME_BORDER
 from audio import load_sound_effects
 
 FONT_NAMES = "Arial"
@@ -31,7 +31,10 @@ def create_game_frame(parent, font_name, theme_name):
     
     
     # === SCORE PANEL ===
-    score_panel = tk.Frame(game_frame, bg=COLOR_BG_PANEL, relief="ridge", bd=5)
+    score_panel = tk.Frame(
+        game_frame, bg=COLOR_BG_PANEL, relief="ridge", bd=5,
+        highlightbackground=COLOR_SCORE_BORDER, highlightthickness=3
+    )
     score_panel.place(x=990, y=10)
     score_label = tk.Label(
         score_panel, text="Score: 0", font=(FONT_NAMES, 18, "bold"),
@@ -40,7 +43,10 @@ def create_game_frame(parent, font_name, theme_name):
     score_label.pack(side="left", padx=(6, 12))
     
     # === FLIPS & TIMER LABELS ===
-    flips_panel = tk.Frame(game_frame, bg=COLOR_BG_PANEL, relief="ridge", bd=5)
+    flips_panel = tk.Frame(
+        game_frame, bg=COLOR_BG_PANEL, relief="ridge", bd=5,
+        highlightbackground=COLOR_FLIPS_BORDER, highlightthickness=3
+    )
     flips_panel.place(x=1130, y=10)
     flips_label = tk.Label(
         flips_panel, text="Flips: 0/20", font=(FONT_NAMES, 18, "bold"),
@@ -48,7 +54,10 @@ def create_game_frame(parent, font_name, theme_name):
     )
     flips_label.pack(side="left", padx=(6, 12))
     
-    timer_panel = tk.Frame(game_frame, bg=COLOR_BG_PANEL, relief="ridge", bd=5)
+    timer_panel = tk.Frame(
+        game_frame, bg=COLOR_BG_PANEL, relief="ridge", bd=5,
+        highlightbackground=COLOR_TIME_BORDER, highlightthickness=3
+    )
     timer_panel.place(x=1285, y=10)
     timer_label = tk.Label(
         timer_panel, text="Time: 60s", font=(FONT_NAMES, 18, "bold"),

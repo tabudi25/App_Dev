@@ -7,6 +7,7 @@ pygame.mixer.init()
 
 # Global state
 music_muted = False
+current_music = None  # Track what music is currently playing: "intro", "theme", or None
 
 # Import theme music mapping
 from constants import THEME_MUSIC
@@ -14,7 +15,7 @@ from constants import THEME_MUSIC
 
 def play_music(theme="naruto"):
     """Play theme-specific background music"""
-    global music_muted
+    global music_muted, current_music
     if music_muted:
         return
     
@@ -23,6 +24,7 @@ def play_music(theme="naruto"):
         try:
             pygame.mixer.music.load(music_file)
             pygame.mixer.music.play(-1)
+            current_music = "theme"
         except Exception:
             pass
     # Fallback to naruto music if theme music doesn't exist
@@ -30,30 +32,40 @@ def play_music(theme="naruto"):
         try:
             pygame.mixer.music.load("narutomusic.mp3")
             pygame.mixer.music.play(-1)
+            current_music = "theme"
         except Exception:
             pass
 
 
 def stop_music():
+    global current_music
     try:
         pygame.mixer.music.stop()
+        current_music = None
     except Exception:
         pass
 
 
-def play_intro():
-    global music_muted
+def play_intro(force=False):
+    """Play intro music. If force=False, only plays if not already playing."""
+    global music_muted, current_music
     if not music_muted and os.path.exists("intro.mp3"):
+        # Only play if not already playing intro (unless forced)
+        if not force and current_music == "intro" and pygame.mixer.music.get_busy():
+            return
         try:
             pygame.mixer.music.load("intro.mp3")
             pygame.mixer.music.play(-1)
+            current_music = "intro"
         except Exception:
             pass
 
 
 def stop_intro():
+    global current_music
     try:
         pygame.mixer.music.stop()
+        current_music = None
     except Exception:
         pass
 

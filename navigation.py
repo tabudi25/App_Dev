@@ -11,9 +11,10 @@ def go_to(frame, home_frame=None):
     """Navigate to a specific frame"""
     frame.lift()
     # If we returned to home, ensure intro is playing (unless muted)
+    # Only play if not already playing to avoid restarting
     if home_frame and frame is home_frame:
         try:
-            play_intro()
+            play_intro(force=False)  # Don't restart if already playing
         except Exception:
             pass
 
@@ -96,6 +97,8 @@ def back_to_themes(game_frame=None, themes_frame=None, result_label=None,
     
     cancel_timer()
     stop_music()
+    # Resume intro music when returning to themes (force play since we just stopped music)
+    play_intro(force=True)
     if clap_sound:
         clap_sound.stop()
     if lose_sound:
