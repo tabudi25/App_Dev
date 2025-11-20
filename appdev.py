@@ -89,6 +89,43 @@ set_bg(howto_frame, "homep1.png")
 from navigation import set_themes_frame
 set_themes_frame(themes_frame)
 
+
+def add_game_mute_button(game_ui):
+    """Add a mute button to a given game frame UI dictionary."""
+    game_frame = game_ui.get('game_frame')
+    if not game_frame:
+        return
+
+    game_mute_btn = ctk.CTkButton(
+        game_frame, text="🔊", font=(FONT_NAMES, 20, "bold"),
+        fg_color="#787c82", bg_color="transparent", text_color="white",
+        hover_color="#3c434a", width=40, height=50, corner_radius=20,
+        border_width=2, border_color="white",
+    )
+    game_mute_btn.configure(command=lambda btn=game_mute_btn: toggle_mute(btn))
+
+    def on_game_mute_icon_enter(event):
+        game_mute_btn.configure(text_color="white")
+        game_mute_btn.configure(fg_color="#3c434a")
+        game_mute_btn.configure(border_color="white")
+    
+    def on_game_mute_icon_leave(event):
+        game_mute_btn.configure(text_color="white")
+        game_mute_btn.configure(fg_color="#787c82")
+        game_mute_btn.configure(border_color="white")
+
+    game_mute_btn.bind("<Enter>", on_game_mute_icon_enter)
+    game_mute_btn.bind("<Leave>", on_game_mute_icon_leave)
+    pywinstyles.set_opacity(game_mute_btn, color=COLOR_BG_PANEL)
+    game_mute_btn.place(x=1400, y=90, anchor="center")
+
+    # Store reference for potential future use
+    game_ui['mute_btn'] = game_mute_btn
+
+
+for game_ui in (naruto_game, op_game, slam_game, db_game, bleach_game):
+    add_game_mute_button(game_ui)
+
 # Initialize game state and register all game frames
 initialize_game_state(naruto_game, root)
 
@@ -177,8 +214,10 @@ mute_btn = ctk.CTkButton(
     border_width=2, border_color="white",
     command=lambda: toggle_mute(mute_btn)
 )
+
 pywinstyles.set_opacity(mute_btn, color="#000001")
 mute_btn.place(x=1400, y=35, anchor="center")
+
 
 def on_mute_enter(event):
     mute_btn.configure(text_color="white")

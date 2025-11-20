@@ -58,7 +58,7 @@ def create_game_frame(parent, font_name, theme_name):
         game_frame, bg=COLOR_BG_PANEL, relief="ridge", bd=5,
         highlightbackground=COLOR_TIME_BORDER, highlightthickness=3
     )
-    timer_panel.place(x=1285, y=10)
+    timer_panel.place(x=1295, y=10)
     timer_label = tk.Label(
         timer_panel, text="Time: 60s", font=(FONT_NAMES, 18, "bold"),
         fg="white", bg=COLOR_BG_PANEL
@@ -95,7 +95,7 @@ def create_game_frame(parent, font_name, theme_name):
         menu_icon_btn.configure(border_color="white")
     
     def on_menu_icon_leave(event):
-        menu_icon_btn.configure(text_color="black")
+        menu_icon_btn.configure(text_color="white")
         menu_icon_btn.configure(fg_color="#787c82")
         menu_icon_btn.configure(border_color="white")
     
