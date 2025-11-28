@@ -6,7 +6,7 @@ import pywinstyles
 # Import modules
 from constants import COLOR_BG_PANEL, COLOR_PANEL_ACCENT, COLOR_BTN_TEXT, FONT_NAMES
 from font_loader import load_custom_font, verify_font
-from audio import play_intro, toggle_mute, load_sound_effects
+from audio import play_intro, toggle_mute, load_sound_effects, set_volume, get_volume, is_muted
 from game_logic import (
     initialize_game_state, register_game_frame, reset_game, update_timer, cancel_timer,
     paused, timer_running, grid_size
@@ -86,8 +86,17 @@ set_bg(bleach_frame, "bleachbg.png")
 set_bg(howto_frame, "homep1.png")
 
 # Set themes frame reference in navigation
-from navigation import set_themes_frame
+from navigation import set_themes_frame, set_theme_selection_frames
 set_themes_frame(themes_frame)
+
+# Register theme selection frames
+set_theme_selection_frames({
+    "naruto": naruto_frame,
+    "op": onepiece_frame,
+    "slam": slamdunk_frame,
+    "db": dragonball_frame,
+    "bleach": bleach_frame
+})
 
 
 def add_game_mute_button(game_ui):
@@ -96,13 +105,92 @@ def add_game_mute_button(game_ui):
     if not game_frame:
         return
 
+    # Create volume panel for this game frame
+    game_volume_panel = tk.Frame(game_frame, bg="black", bd=4, relief="ridge")
+    game_volume_panel.place(relx=0.5, rely=0.5, anchor="center", width=350, height=200)
+    game_volume_panel.lower()
+
+    game_volume_title = tk.Label(
+        game_volume_panel, text="Volume Settings", font=(FONT_NAMES, 20, "bold"),
+        fg="white", bg="black"
+    )
+    game_volume_title.pack(pady=(15, 10))
+
+    game_volume_slider_frame = tk.Frame(game_volume_panel, bg="black")
+    game_volume_slider_frame.pack(pady=10)
+
+    game_volume_slider = ctk.CTkSlider(
+        game_volume_slider_frame, from_=0, to=100, width=250,
+        command=lambda value: set_volume(value / 100.0)
+    )
+    game_volume_slider.set(get_volume() * 100)
+    game_volume_slider.pack(pady=5)
+
+    game_volume_label = tk.Label(
+        game_volume_slider_frame, text=f"Volume: {int(get_volume() * 100)}%",
+        font=(FONT_NAMES, 14, "bold"), fg="white", bg="black"
+    )
+    game_volume_label.pack()
+
+    def update_game_volume_label(value):
+        """Update volume label when slider changes"""
+        vol = int(float(value))
+        game_volume_label.config(text=f"Volume: {vol}%")
+        set_volume(vol / 100.0)
+
+    game_volume_slider.configure(command=update_game_volume_label)
+
+    game_volume_buttons_frame = tk.Frame(game_volume_panel, bg="black")
+    game_volume_buttons_frame.pack(pady=10)
+
+    def close_game_volume_panel():
+        """Close the volume settings panel"""
+        game_volume_panel.lower()
+
+    game_close_btn = ctk.CTkButton(
+        game_volume_buttons_frame, text="Close", font=(FONT_NAMES, 14, "bold"),
+        fg_color="#787c82", bg_color="black", hover_color="#FF5252",
+        text_color="black", width=100, height=35, corner_radius=12,
+        border_width=2, border_color="white", command=close_game_volume_panel
+    )
+    game_close_btn.pack(side="left", padx=5)
+
+    def toggle_mute_from_game_panel():
+        """Toggle mute from game volume panel"""
+        toggle_mute(game_mute_btn)
+        update_game_mute_button_icon()
+
+    game_mute_toggle_btn = ctk.CTkButton(
+        game_volume_buttons_frame, text="🔊", font=(FONT_NAMES, 16, "bold"),
+        fg_color="#787c82", bg_color="black", hover_color="#FF5252",
+        text_color="black", width=100, height=35, corner_radius=12,
+        border_width=2, border_color="white", command=toggle_mute_from_game_panel
+    )
+    game_mute_toggle_btn.pack(side="right", padx=5)
+
+    def show_game_volume_panel():
+        """Show the volume settings panel for game frame"""
+        game_volume_slider.set(get_volume() * 100)
+        game_volume_label.config(text=f"Volume: {int(get_volume() * 100)}%")
+        game_mute_toggle_btn.configure(text="🔇" if is_muted() else "🔊")
+        game_volume_panel.lift()
+
+    def update_game_mute_button_icon():
+        """Update game mute button icon based on mute state"""
+        if is_muted():
+            game_mute_btn.configure(text="🔇")
+            game_mute_toggle_btn.configure(text="🔇")
+        else:
+            game_mute_btn.configure(text="🔊")
+            game_mute_toggle_btn.configure(text="🔊")
+
     game_mute_btn = ctk.CTkButton(
         game_frame, text="🔊", font=(FONT_NAMES, 20, "bold"),
         fg_color="#787c82", bg_color="transparent", text_color="white",
         hover_color="#3c434a", width=40, height=50, corner_radius=20,
         border_width=2, border_color="white",
+        command=show_game_volume_panel
     )
-    game_mute_btn.configure(command=lambda btn=game_mute_btn: toggle_mute(btn))
 
     def on_game_mute_icon_enter(event):
         game_mute_btn.configure(text_color="white")
@@ -207,12 +295,91 @@ exit_btn.bind("<Enter>", on_exit_enter)
 exit_btn.bind("<Leave>", on_exit_leave)
 
 
+# Volume settings panel (initially hidden)
+volume_panel = tk.Frame(home_frame, bg="black", bd=4, relief="ridge")
+volume_panel.place(relx=0.5, rely=0.5, anchor="center", width=350, height=200)
+volume_panel.lower()
+
+volume_title = tk.Label(
+    volume_panel, text="Volume Settings", font=(FONT_NAMES, 20, "bold"),
+    fg="white", bg="black"
+)
+volume_title.pack(pady=(15, 10))
+
+volume_slider_frame = tk.Frame(volume_panel, bg="black")
+volume_slider_frame.pack(pady=10)
+
+volume_slider = ctk.CTkSlider(
+    volume_slider_frame, from_=0, to=100, width=250,
+    command=lambda value: set_volume(value / 100.0)
+)
+volume_slider.set(get_volume() * 100)
+volume_slider.pack(pady=5)
+
+volume_label = tk.Label(
+    volume_slider_frame, text=f"Volume: {int(get_volume() * 100)}%",
+    font=(FONT_NAMES, 14, "bold"), fg="white", bg="black"
+)
+volume_label.pack()
+
+def update_volume_label(value):
+    """Update volume label when slider changes"""
+    vol = int(float(value))
+    volume_label.config(text=f"Volume: {vol}%")
+    set_volume(vol / 100.0)
+
+volume_slider.configure(command=update_volume_label)
+
+volume_buttons_frame = tk.Frame(volume_panel, bg="black")
+volume_buttons_frame.pack(pady=10)
+
+def close_volume_panel():
+    """Close the volume settings panel"""
+    volume_panel.lower()
+
+close_btn = ctk.CTkButton(
+    volume_buttons_frame, text="Close", font=(FONT_NAMES, 14, "bold"),
+    fg_color="#787c82", bg_color="black", hover_color="#FF5252",
+    text_color="black", width=100, height=35, corner_radius=12,
+    border_width=2, border_color="white", command=close_volume_panel
+)
+close_btn.pack(side="left", padx=5)
+
+def toggle_mute_from_panel():
+    """Toggle mute from volume panel"""
+    toggle_mute(mute_btn)
+    update_mute_button_icon()
+
+mute_toggle_btn = ctk.CTkButton(
+    volume_buttons_frame, text="🔊", font=(FONT_NAMES, 16, "bold"),
+    fg_color="#787c82", bg_color="black", hover_color="#FF5252",
+    text_color="black", width=100, height=35, corner_radius=12,
+    border_width=2, border_color="white", command=toggle_mute_from_panel
+)
+mute_toggle_btn.pack(side="right", padx=5)
+
+def show_volume_panel():
+    """Show the volume settings panel"""
+    volume_slider.set(get_volume() * 100)
+    volume_label.config(text=f"Volume: {int(get_volume() * 100)}%")
+    mute_toggle_btn.configure(text="🔇" if is_muted() else "🔊")
+    volume_panel.lift()
+
+def update_mute_button_icon():
+    """Update mute button icon based on mute state"""
+    if is_muted():
+        mute_btn.configure(text="🔇")
+        mute_toggle_btn.configure(text="🔇")
+    else:
+        mute_btn.configure(text="🔊")
+        mute_toggle_btn.configure(text="🔊")
+
 mute_btn = ctk.CTkButton(
     home_frame, text="🔊", font=(FONT_NAMES, 24, "bold"),
     fg_color="#787c82", bg_color="#000001", text_color="black",
     hover_color="#FF5252", width=40, height=50, corner_radius=20,
     border_width=2, border_color="white",
-    command=lambda: toggle_mute(mute_btn)
+    command=show_volume_panel
 )
 
 pywinstyles.set_opacity(mute_btn, color="#000001")
@@ -431,6 +598,22 @@ gameover_text = tk.Label(
 )
 gameover_text.pack(anchor="w", padx=20, pady=(0, 15))
 
+special_section = tk.Frame(instruction_frame, bg="black", relief="raised", bd=0)
+special_section.pack(fill="x", pady=8)
+
+special_title = tk.Label(
+    special_section, text="⚠️ Special Features", font=(FONT_NAMES, 12, "bold"),
+    fg="white", bg="black"
+)
+special_title.pack(anchor="w", padx=20, pady=(15, 8))
+
+special_text = tk.Label(
+    special_section,
+    text="Hint - Card automatically flash if you flip the card 5 times in a row without matching it.",
+    font=(FONT_NAMES, 12, "bold"), fg="white", bg="black", justify="left"
+)
+special_text.pack(anchor="w", padx=20, pady=(0, 15))
+
 howto_back_btn = ctk.CTkButton(
     howto_frame, text="Back", font=(FONT_NAMES, 16, "bold"),
     fg_color="#787c82", bg_color="#0d1117", text_color="black",
@@ -458,6 +641,15 @@ howto_back_btn.place(x=20, y=20)
 # === NARUTO FRAME UI ===
 naruto_gif_frame = tk.Frame(naruto_frame, bg="white", relief="raised", bd=5)
 naruto_gif_frame.place(x=400, y=200, width=715, height=376)
+
+# Register theme selection frames (gif frames will be registered after they're created)
+set_theme_selection_frames({
+    "naruto": naruto_frame,
+    "op": onepiece_frame,
+    "slam": slamdunk_frame,
+    "db": dragonball_frame,
+    "bleach": bleach_frame
+})
 
 
 def go_to_naruto_with_auto_transitions():
@@ -840,6 +1032,16 @@ make_back_btn(
     bleach_frame, "Back", lambda: go_to(themes_frame, home_frame),
     "#FF6B6B", "#FF5252", FONT_NAMES
 )
+
+# Register theme gif frames (after all gif frames are created)
+from navigation import set_theme_gif_frames
+set_theme_gif_frames({
+    "naruto": naruto_gif_frame,
+    "op": onepiece_gif_frame,
+    "slam": slamdunk_gif_frame,
+    "db": dragonball_gif_frame,
+    "bleach": bleach_gif_frame
+})
 
 # Start intro music
 play_intro()

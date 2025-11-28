@@ -5,6 +5,8 @@ from audio import play_intro, stop_music, play_music
 # Global state
 current_theme = "naruto"
 themes_frame_ref = None
+theme_selection_frames = {}  # Store theme selection frames (naruto_frame, onepiece_frame, etc.)
+theme_gif_frames = {}  # Store gif frames for each theme
 
 
 def go_to(frame, home_frame=None):
@@ -134,4 +136,46 @@ def set_themes_frame(themes_frame):
 def get_themes_frame():
     """Get the themes frame reference"""
     return themes_frame_ref
+
+
+def set_theme_selection_frames(frames_dict):
+    """Set theme selection frame references"""
+    global theme_selection_frames
+    theme_selection_frames = frames_dict
+
+
+def set_theme_gif_frames(frames_dict):
+    """Set theme gif frame references"""
+    global theme_gif_frames
+    theme_gif_frames = frames_dict
+
+
+def go_to_theme_selection():
+    """Navigate to the theme selection frame for the current theme"""
+    from game_logic import cancel_timer
+    from theme_handlers import start_auto_transitions
+    
+    cancel_timer()
+    stop_music()
+    
+    theme = get_current_theme()
+    theme_frame = theme_selection_frames.get(theme)
+    gif_frame = theme_gif_frames.get(theme)
+    
+    if theme_frame:
+        # Map theme names to their selection frame names and background colors
+        theme_configs = {
+            "naruto": ("naruto", "#1A1A2E"),
+            "op": ("op", "#F8F4EC"),
+            "slam": ("slamdunk", "#1A1A2E"),
+            "db": ("db", "#1A1A2E"),
+            "bleach": ("bleach", "#1A1A2E")
+        }
+        
+        theme_name, bg_color = theme_configs.get(theme, ("naruto", "#1A1A2E"))
+        
+        if gif_frame:
+            start_auto_transitions(gif_frame, theme_name, bg_color)
+        
+        theme_frame.lift()
 

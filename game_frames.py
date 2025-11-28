@@ -67,7 +67,7 @@ def create_game_frame(parent, font_name, theme_name):
     
     # === PAUSE MENU BOX ===
     pause_menu_box = tk.Frame(game_frame, bg="black", bd=4, relief="ridge")
-    pause_menu_box.place(relx=0.5, rely=0.5, anchor="center", width=450, height=400)
+    pause_menu_box.place(relx=0.5, rely=0.5, anchor="center", width=450, height=500)
     pause_menu_box.lower()
     
     pause_menu_title = tk.Label(
@@ -198,6 +198,23 @@ def create_game_frame(parent, font_name, theme_name):
             pause_menu_box=pause_menu_box, clap_sound=clap_sound, lose_sound=lose_sound
         )
     
+    def on_menu_change_grid():
+        """Navigate back to theme selection to choose a different grid size"""
+        from navigation import go_to_theme_selection
+        from game_logic import cancel_timer
+        import game_logic
+        
+        pause_menu_box.lower()
+        cancel_timer()
+        game_logic.paused = False
+        game_logic.timer_running = False
+        
+        # Lower the game frame
+        game_frame.lower()
+        
+        # Navigate to theme selection screen
+        go_to_theme_selection()
+    
     menu_resume_btn = ctk.CTkButton(
         pause_menu_buttons, text="Resume", font=(FONT_NAMES, 18, "bold"),
         fg_color="#787c82", bg_color="black", hover_color="#FF5252",
@@ -260,6 +277,27 @@ def create_game_frame(parent, font_name, theme_name):
     menu_back_btn.bind("<Enter>", on_menu_back_enter)
     menu_back_btn.bind("<Leave>", on_menu_back_leave)
     menu_back_btn.pack(pady=10)
+    
+    menu_change_grid_btn = ctk.CTkButton(
+        pause_menu_buttons, text="Change grid", font=(FONT_NAMES, 18, "bold"),
+        fg_color="#787c82", bg_color="black", hover_color="#FF5252",
+        text_color="black", width=180, height=60, corner_radius=15,
+        border_width=2, border_color="white", command=on_menu_change_grid
+    )
+    
+    def on_menu_change_grid_enter(event):
+        menu_change_grid_btn.configure(text_color="white")
+        menu_change_grid_btn.configure(fg_color="black")
+        menu_change_grid_btn.configure(border_color="white")
+    
+    def on_menu_change_grid_leave(event):
+        menu_change_grid_btn.configure(text_color="black")
+        menu_change_grid_btn.configure(fg_color="#787c82")
+        menu_change_grid_btn.configure(border_color="white")
+    
+    menu_change_grid_btn.bind("<Enter>", on_menu_change_grid_enter)
+    menu_change_grid_btn.bind("<Leave>", on_menu_change_grid_leave)
+    menu_change_grid_btn.pack(pady=10)
     
     # Create overlay buttons
     def on_win_reset():
